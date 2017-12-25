@@ -5,9 +5,9 @@
       class="home-btn"
       type="default"
       size="large"
-      @click="onClickConnect"
+      @click="onClickLoad"
     >
-      connect
+      load
     </mt-button>
     <mt-button
       class="home-btn"
@@ -21,11 +21,23 @@
       class="home-btn"
       type="default"
       size="large"
+      @click="onClickConnect"
+    >
+      connect
+    </mt-button>
+    <mt-button
+      class="home-btn"
+      type="default"
+      size="large"
       @click="onClickSendData"
     >
       send
     </mt-button>
     <div class="home-message">{{ result }}</div>
+    <canvas
+      id="process-stage"
+      v-if="showStage"
+    />
   </div>
 </template>
 
@@ -40,19 +52,25 @@ export default {
   name: 'home',
   data () {
     return {
-      result: null
+      result: null,
+      showStage: false
     }
   },
   methods: {
+    onClickLoad () {
+      Jimp.read('/static/cifar-10/test-imgs/airplane2.png')
+      .then(res => {
+        console.log(res.bitmap.data)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    },
+    onClickInfer () {
+    },
     onClickConnect () {
       wsc.createConnection('ws://192.168.2.100:8888')
       wsc.setUpListeners()
-    },
-    onClickInfer () {
-      SimpleConv.performInference()
-        .then(res => {
-          this.result = res
-        })
     },
     onClickSendData () {
       let testJsonMsg = {

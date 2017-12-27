@@ -50,6 +50,7 @@ export default {
         // Softmax
         this.softmaxBiases = vars['softmax_linear/biases']    // 10
         this.softmaxWeights = vars['softmax_linear/weights']  // 192 10
+
         res()
       })
       .catch(err => {
@@ -58,16 +59,13 @@ export default {
     })
   },
 
-  loadImageAsPromise () {
-    // return new Promise(function (resolve, reject) {
-    //   const image = new Image(32, 32)
-    //   image.onload = resolve(image)
-    //   image.onerror = reject('error')
-    //   image.src = '/static/cifar-10/test-imgs/airplane2.png'
-    // })
-  },
-
   performInference: function (imgTensor) {
+    this.loadModel()
+    .then(res => {
 
+    })
+    .catch(err => {
+      console.log(err)
+    })
   }
 }

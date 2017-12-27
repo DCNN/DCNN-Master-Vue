@@ -1,48 +1,42 @@
 <template>
-  <div class="home">
-    <mt-header class="home-header" fixed title="DCNN"></mt-header>
-    <mt-button
+  <div>
+    <md-button
       class="home-btn"
       type="default"
       size="large"
-      @click="onClickLoad"
+      @click="onClickLoadImageData"
     >
-      load
-    </mt-button>
-    <mt-button
+      load image
+    </md-button>
+    <md-button
       class="home-btn"
       type="default"
       size="large"
       @click="onClickInfer"
     >
       infer
-    </mt-button>
-    <mt-button
+    </md-button>
+    <md-button
       class="home-btn"
       type="default"
       size="large"
       @click="onClickConnect"
     >
       connect
-    </mt-button>
-    <mt-button
+    </md-button>
+    <md-button
       class="home-btn"
       type="default"
       size="large"
       @click="onClickSendData"
     >
       send
-    </mt-button>
+    </md-button>
     <div class="home-message">{{ result }}</div>
-    <canvas
-      id="process-stage"
-      v-if="showStage"
-    />
   </div>
 </template>
 
 <script>
-import { Toast } from 'mint-ui'
 import { Array1D, NDArrayMathGPU, Scalar } from 'deeplearn'
 
 import SimpleConv from '@/kernels/simple-conv'
@@ -53,20 +47,21 @@ export default {
   data () {
     return {
       result: null,
-      showStage: false
+      tensor4D: null  // image data [batch_size][weight][width][channel]
     }
   },
   methods: {
-    onClickLoad () {
-      Jimp.read('/static/cifar-10/test-imgs/airplane2.png')
+    onClickLoadImageData () {
+      this.$http.get('/static/cifar-10/test-imgs-data/data.json')
       .then(res => {
-        console.log(res.bitmap.data)
+        console.log(res)
       })
       .catch(err => {
         console.log(err)
       })
     },
     onClickInfer () {
+      console.log('load img first')
     },
     onClickConnect () {
       wsc.createConnection('ws://192.168.2.100:8888')
@@ -80,17 +75,11 @@ export default {
     }
   },
   created () {
-
   }
 }
 </script>
 
 <style scoped>
-.home-header {
-  background-color: gainsboro;
-  color: black;
-}
-
 .home-message {
   text-align: left;
   overflow: scroll;

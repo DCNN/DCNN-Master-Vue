@@ -2,18 +2,30 @@
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue'
 import App from './App'
+import axios from 'axios'
+import VueAxios from 'vue-axios'
+import VueMaterial from 'vue-material'
+import 'vue-material/dist/vue-material.min.css'
+
+import { ENV, NDArrayMath } from 'deeplearn'
 
 import router from './router'          // enable vue router
 import store from './store/index.js'   // enable vuex
 
-import Mint from 'mint-ui'
-import 'mint-ui/lib/style.css'
-
-import { ENV, NDArrayMath } from 'deeplearn';
-
-Vue.use(Mint)
-
 Vue.config.productionTip = false
+
+// Vue Material
+Vue.use(VueMaterial)
+
+// HTTP REQ
+Vue.use(VueAxios, axios)
+
+// axios settings
+Vue.axios.defaults.baseURL = 'http://localhost:8080'
+
+// deeplearnjs config
+let math = new NDArrayMath('webgl', false)
+ENV.setMath(math)
 
 /* eslint-disable no-new */
 new Vue({
@@ -22,7 +34,3 @@ new Vue({
   template: '<App/>',
   components: { App }
 })
-
-// deeplearnjs config
-let math = new NDArrayMath('webgl', false)
-ENV.setMath(math)

@@ -6,6 +6,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import VueMaterial from 'vue-material'
 import 'vue-material/dist/vue-material.min.css'
+import Toasted from 'vue-toasted'
 
 import { ENV, NDArrayMath } from 'deeplearn'
 
@@ -16,6 +17,13 @@ Vue.config.productionTip = false
 
 // Vue Material
 Vue.use(VueMaterial)
+
+// Vue Toast
+Vue.use(Toasted, {
+  position: 'top-center',
+  fullWidth: true,
+  duration: 2500
+})
 
 // HTTP REQ
 Vue.use(VueAxios, axios)

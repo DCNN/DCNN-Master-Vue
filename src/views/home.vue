@@ -62,6 +62,7 @@ export default {
     },
     onClickInfer () {
       console.log('load img first')
+      this.$toasted.show('load img first')
     },
     onClickConnect () {
       wsc.createConnection('ws://192.168.2.100:8888')

@@ -12,6 +12,7 @@ import json
 
 import numpy as np
 from PIL import Image
+from PIL import ImageStat
 
 
 BASE_DIR = './static/cifar-10/'
@@ -38,7 +39,7 @@ def extract_flat_pixels_and_shape_from(file_path):
         image height
         image width
     """
-    img = Image.open(file_path)
+    img = Image.open(file_path).convert('RGB')
     img = img.resize(DEST_IMG_SIZE)
     return list(img.getdata()), img.height, img.width
 
@@ -49,7 +50,7 @@ def extract_image_pixels_from(file_path):
     @return
         3D tensor ([height][width][channel])
     """
-    img = Image.open(file_path)
+    img = Image.open(file_path).convert('RGB')
     img = img.resize(DEST_IMG_SIZE)
     pixels = list(img.getdata())
     tensor_3d = []

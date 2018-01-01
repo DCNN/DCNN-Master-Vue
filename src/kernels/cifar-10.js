@@ -4,8 +4,10 @@ import {
   ENV, CheckpointLoader
 } from 'deeplearn'
 
+import mathExtra from '@/kernels/math-extra'
+
 export default {
-  batchSize: 1,
+  batchSize: 4,
   inputShape: [24, 24],
 
   // Model Desc
@@ -59,10 +61,23 @@ export default {
     })
   },
 
+  standardlizeImageData: function (tensor1D) {
+    let batchLength = this.inputShape[0] * this.inputShape[1]
+    for (let i = 0; i < tensor1D.length; i += batchLength) {
+      let mean = mathExtra.meanFromTo(tensor1D, i, i + batchLength)
+      let stddev = mathExtra.stddevFromTo(tensor1D, i, i + batchLength)
+      for (let j = i; j < i + batchLength; ++j) {
+        tensor1D[j] = (tensor1D[j] - mean) / stddev
+      }
+    }
+  },
+
   // perform the inference of cifar-10 network
   // tensor1D: 1D tensor [batch_szie * height * width * channel]
   performInference: function (tensor1D) {
     return new Promise((resolve, reject) => {
+      this.standardlizeImageData(tensor1D)
+      console.log(tensor1D)
       let tensor4D = Array4D.new([this.batchSize, this.inputShape[0], this.inputShape[1], 3], tensor1D)
       this.loadModel()
         .then(res => {

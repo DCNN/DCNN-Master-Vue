@@ -39,7 +39,7 @@
 <script>
 import { Array1D, NDArrayMathGPU, Scalar } from 'deeplearn'
 
-import SimpleConv from '@/kernels/simple-conv'
+import Cifar10 from '@/kernels/cifar-10'
 import wsc from '@/kernels/web-socket-client'
 
 export default {
@@ -66,7 +66,7 @@ export default {
         this.$toasted.show('please load img first')
         return
       }
-      SimpleConv.performInference(this.tensor1D)
+      Cifar10.performInference(this.tensor1D)
         .then(res => {
           console.log(res)
         })

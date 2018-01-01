@@ -32,7 +32,7 @@
     >
       send
     </md-button>
-    <div class="home-message">{{ result }}</div>
+    <md-content class="home-message">{{ result }}</md-content>
   </div>
 </template>
 
@@ -47,22 +47,32 @@ export default {
   data () {
     return {
       result: null,
-      tensor4D: null  // image data [batch_size][weight][width][channel]
+      tensor1D: null  // image data [batch_size * height * width * channel]
     }
   },
   methods: {
     onClickLoadImageData () {
       this.$http.get('/static/cifar-10/test-imgs-data/data.json')
-      .then(res => {
-        console.log(res)
-      })
-      .catch(err => {
-        console.log(err)
-      })
+        .then(res => {
+          this.tensor1D = res.data
+          console.log(this.tensor1D)
+        })
+        .catch(err => {
+          console.log(err)
+        })
     },
     onClickInfer () {
-      console.log('load img first')
-      this.$toasted.show('load img first')
+      if (this.tensor1D === null) {
+        this.$toasted.show('please load img first')
+        return
+      }
+      SimpleConv.performInference(this.tensor1D)
+        .then(res => {
+          console.log(res)
+        })
+        .catch(err => {
+          console.log(err)
+        })
     },
     onClickConnect () {
       wsc.createConnection('ws://192.168.2.100:8888')

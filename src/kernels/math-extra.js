@@ -2,24 +2,15 @@
 
 export default {
   mean: function (arr) {
-    let sum = 0
-    for (let i = 0; i < arr.length; ++i) {
-      sum += arr[i]
-    }
-    return sum / arr.length
+    return this.meanFromTo(arr, 0, arr.length)
   },
 
   variance: function (arr) {
-    let mean = this.mean(arr)
-    let sum = 0
-    for(let i = 0; i < arr.length; i++) {
-        sum += Math.pow(arr[i] - mean , 2)
-    }
-    return sum / arr.length
+    return this.varianceFromTo(arr, 0, arr.length)
   },
 
   stddev: function (arr) {
-    return Math.sqrt(this.variance(arr))
+    return this.stddevFromTo(arr, 0, arr.length)
   },
 
   // [from, to]

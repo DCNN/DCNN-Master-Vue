@@ -20,17 +20,9 @@
       class="home-btn"
       type="default"
       size="large"
-      @click="onClickConnect"
+      @click="onClickMultiInfer"
     >
-      connect
-    </md-button>
-    <md-button
-      class="home-btn"
-      type="default"
-      size="large"
-      @click="onClickSendData"
-    >
-      send
+      multi infer
     </md-button>
     <md-content class="home-message">{{ result }}</md-content>
   </div>
@@ -40,7 +32,6 @@
 import { Array1D, NDArrayMathGPU, Scalar } from 'deeplearn'
 
 import Cifar10 from '@/kernels/cifar-10'
-import wsc from '@/kernels/web-socket-client'
 
 export default {
   name: 'home',
@@ -74,15 +65,18 @@ export default {
           console.log(err)
         })
     },
-    onClickConnect () {
-      wsc.createConnection('ws://192.168.2.100:8888')
-      wsc.setUpListeners()
-    },
-    onClickSendData () {
-      let testJsonMsg = {
-        data: 'hi, server'
+    onClickMultiInfer () {
+      if (this.tensor1D === null) {
+        this.$toasted.show('please load img first')
+        return
       }
-      wsc.sendMsg(testJsonMsg)
+      Cifar10.performMultiInference(this.tensor1D)
+        .then(res => {
+          console.log(res)
+        })
+        .catch(err => {
+          console.log(err)
+        })
     }
   },
   created () {

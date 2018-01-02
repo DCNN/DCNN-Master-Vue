@@ -5,10 +5,19 @@ import {
 } from 'deeplearn'
 
 import mathExtra from '@/kernels/math-extra'
+import taskManager from '@/kernels/task-manager'
 
 export default {
+  // ws pre settings
+  wsServerIP: 'ws://192.168.1.112:8888',
+
+  // cnn pre settings
   batchSize: 4,
   inputShape: [24, 24],
+  labels: [
+    'airplane', 'automobile', 'bird', 'cat', 'deer',
+    'dog', 'frog', 'horse', 'ship', 'truck'
+  ],
 
   // Model Desc
   conv1Biases: null,
@@ -28,7 +37,7 @@ export default {
   // Labels: 1D tensor of [batch_size] size
   label: null,
 
-  loadModel () {
+  _loadModel () {
     const varLoader = new CheckpointLoader('./static/cifar-10/14646/')
     return new Promise((resolve, reject) => {
       varLoader.getAllVariables()
@@ -61,7 +70,8 @@ export default {
     })
   },
 
-  standardlizeImageData: function (tensor1D) {
+  // pre-process image data
+  _standardlizeImageData: function (tensor1D) {
     let batchLength = this.inputShape[0] * this.inputShape[1]
     for (let i = 0; i < tensor1D.length; i += batchLength) {
       let mean = mathExtra.meanFromTo(tensor1D, i, i + batchLength)
@@ -72,14 +82,14 @@ export default {
     }
   },
 
-  // perform the inference of cifar-10 network
+  // perform the inference of cifar-10 network, with only 1 device
   // tensor1D: 1D tensor [batch_szie * height * width * channel]
   performInference: function (tensor1D) {
     return new Promise((resolve, reject) => {
-      this.standardlizeImageData(tensor1D)
+      this._standardlizeImageData(tensor1D)
       console.log(tensor1D)
       let tensor4D = Array4D.new([this.batchSize, this.inputShape[0], this.inputShape[1], 3], tensor1D)
-      this.loadModel()
+      this._loadModel()
         .then(res => {
           // Conv: layer 1
           let conv1 = this.math.conv2d(tensor4D, this.conv1Weights, this.conv1Biases, [1, 1], 'same')
@@ -114,6 +124,36 @@ export default {
         })
         .catch(err => {
           reject(err)
+        })
+    })
+  },
+
+  performMultiInference: function (tensor1D) {
+    return new Promise((resolve, reject) => {
+      taskManager.createConnection(this.wsServerIP)
+        .then(res => {
+          return taskManager.sendMsg({
+            op: 'sendModel',
+            data: [3, 2, 1]
+          })
+        })
+        .then(res => {
+          console.log('Server Respond:', res)
+          return taskManager.sendMsg({
+            op: 'sendInputTensor',
+            data: [1, 2, 3]
+          })
+        })
+        .then(res => {
+          console.log('Server Respond:', res)
+          resolve(res)
+        })
+        .catch(err => {
+          console.log(err)
+          reject(err)
+        })
+        .finally(() => {
+          taskManager.closeConnection()
         })
     })
   }

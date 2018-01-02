@@ -13,6 +13,9 @@ import { ENV, NDArrayMath } from 'deeplearn'
 import router from './router'          // enable vue router
 import store from './store/index.js'   // enable vuex
 
+// self-defined modules
+import extendPromise from '@/kernels/extend-promise'
+
 Vue.config.productionTip = false
 
 // Vue Material
@@ -42,3 +45,6 @@ new Vue({
   template: '<App/>',
   components: { App }
 })
+
+// extend promise
+extendPromise.apply()

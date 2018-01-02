@@ -34,7 +34,7 @@ export default {
         reject('send msg failed')
       }
 
-      console.log(this.TAG, 'send msg:', JSON.stringify(jsonMsg))
+      // console.log(this.TAG, 'send msg:', JSON.stringify(jsonMsg))
       this.ws.send(JSON.stringify(jsonMsg))
 
       this.ws.onmessage = (event) => {

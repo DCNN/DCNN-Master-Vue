@@ -6,38 +6,47 @@ import {
 
 import mathExtra from '@/kernels/math-extra'
 import taskManager from '@/kernels/task-manager'
+import cifarSettings from '@/settings/cifar-settings'
 
 export default {
-  // ws pre settings
-  wsServerIP: 'ws://192.168.1.112:8888',
+  /**
+   *  Model Desc
+   */
+  conv1Biases: null,     // 64
+  conv1Weights: null,    // 5 5 3 64
+  conv2Biases: null,     // 64
+  conv2Weights: null,    // 5 5 3 64
+  local3Biases: null,    // 384
+  local3Weights: null,   // 2304 384
+  local4Biases: null,    // 192
+  local4Weights: null,   // 384 192
+  softmaxBiases: null,   // 10
+  softmaxWeights: null,  // 192 10
 
-  // cnn pre settings
-  batchSize: 4,
-  inputShape: [24, 24],
-  labels: [
-    'airplane', 'automobile', 'bird', 'cat', 'deer',
-    'dog', 'frog', 'horse', 'ship', 'truck'
-  ],
-
-  // Model Desc
-  conv1Biases: null,
-  conv1Weights: null,
-  conv2Biases: null,
-  conv2Weights: null,
-  local3Biases: null,
-  local3Weights: null,
-  local4Biases: null,
-  local4Weights: null,
-  softmaxBiases: null,
-  softmaxWeights: null,
-
-  // NDArrayMathGPU
+  /**
+   *  NDArrayMathGPU
+   */
   math: ENV.math,
 
-  // Labels: 1D tensor of [batch_size] size
-  label: null,
+  /**
+   *  Pre-Process Image Data
+   */
+  _standardlizeImageData: function (tensor1D) {
+    let batchLength = cifarSettings.inputShape[0] * cifarSettings.inputShape[1]
+    for (let i = 0; i < tensor1D.length; i += batchLength) {
+      let mean = mathExtra.meanFromTo(tensor1D, i, i + batchLength)
+      let stddev = mathExtra.stddevFromTo(tensor1D, i, i + batchLength)
+      for (let j = i; j < i + batchLength; ++j) {
+        tensor1D[j] = (tensor1D[j] - mean) / stddev
+      }
+    }
+  },
 
-  _loadModel () {
+  /**
+   * Load Model from NetFiles
+   * @returns Promise
+   */
+  loadModel () {
     const varLoader = new CheckpointLoader('./static/cifar-10/14646/')
     return new Promise((resolve, reject) => {
       varLoader.getAllVariables()
@@ -70,83 +79,87 @@ export default {
     })
   },
 
-  // pre-process image data
-  _standardlizeImageData: function (tensor1D) {
-    let batchLength = this.inputShape[0] * this.inputShape[1]
-    for (let i = 0; i < tensor1D.length; i += batchLength) {
-      let mean = mathExtra.meanFromTo(tensor1D, i, i + batchLength)
-      let stddev = mathExtra.stddevFromTo(tensor1D, i, i + batchLength)
-      for (let j = i; j < i + batchLength; ++j) {
-        tensor1D[j] = (tensor1D[j] - mean) / stddev
-      }
-    }
-  },
-
-  // perform the inference of cifar-10 network, with only 1 device
-  // tensor1D: 1D tensor [batch_szie * height * width * channel]
+  /**
+   * Perform the inference of cifar-10 network, with only 1 device
+   * @param tensor1D: 1D tensor [batch_szie * height * width * channel]
+   * @returns Promise
+   */
   performInference: function (tensor1D) {
     return new Promise((resolve, reject) => {
-      this._standardlizeImageData(tensor1D)
-      console.log(tensor1D)
-      let tensor4D = Array4D.new([this.batchSize, this.inputShape[0], this.inputShape[1], 3], tensor1D)
-      this._loadModel()
-        .then(res => {
-          // Conv: layer 1
-          let conv1 = this.math.conv2d(tensor4D, this.conv1Weights, this.conv1Biases, [1, 1], 'same')
-          conv1 = this.math.relu(conv1)
-          let pool1 = this.math.maxPool(conv1, [3, 3], [2, 2], 'same')
+      try {
+        this._standardlizeImageData(tensor1D)
+        let tensor4D = Array4D.new([cifarSettings.batchSize, cifarSettings.inputShape[0], cifarSettings.inputShape[1], 3], tensor1D)
 
-          // Conv: layer 2
-          let conv2 = this.math.conv2d(pool1, this.conv2Weights, this.conv2Biases, [1, 1], 'same')
-          conv2 = this.math.relu(conv2)
-          let pool2 = this.math.maxPool(conv2, [3, 3], [2, 2], 'same')
+        // Conv: layer 1
+        let conv1 = this.math.conv2d(tensor4D, this.conv1Weights, this.conv1Biases, [1, 1], 'same')
+        conv1 = this.math.relu(conv1)
+        let pool1 = this.math.maxPool(conv1, [3, 3], [2, 2], 'same')
 
-          // flatten tensor, ready to perform matrix multiplication
-          let [curB, curH, curW, curC] = pool2.shape
-          pool2 = pool2.reshape([this.batchSize, curH * curW * curC])
+        // Conv: layer 2
+        let conv2 = this.math.conv2d(pool1, this.conv2Weights, this.conv2Biases, [1, 1], 'same')
+        conv2 = this.math.relu(conv2)
+        let pool2 = this.math.maxPool(conv2, [3, 3], [2, 2], 'same')
 
-          // Local: layer 3
-          let local3 = this.math.matMul(pool2, this.local3Weights)
-          local3 = this.math.add(local3, this.local3Biases)
-          local3 = this.math.relu(local3)
+        // flatten tensor, ready to perform matrix multiplication
+        let [curB, curH, curW, curC] = pool2.shape
+        pool2 = pool2.reshape([cifarSettings.batchSize, curH * curW * curC])
 
-          // Local: layer 4
-          let local4 = this.math.matMul(local3, this.local4Weights)
-          local4 = this.math.add(local4, this.local4Biases)
-          local4 = this.math.relu(local4)
+        // Local: layer 3
+        let local3 = this.math.matMul(pool2, this.local3Weights)
+        local3 = this.math.add(local3, this.local3Biases)
+        local3 = this.math.relu(local3)
 
-          // // Softmax: layer 5
-          let softmax5 = this.math.matMul(local4, this.softmaxWeights)
-          softmax5 = this.math.add(softmax5, this.softmaxBiases)
-          softmax5 = this.math.softmax(softmax5)
+        // Local: layer 4
+        let local4 = this.math.matMul(local3, this.local4Weights)
+        local4 = this.math.add(local4, this.local4Biases)
+        local4 = this.math.relu(local4)
 
-          resolve(softmax5.dataSync())
-        })
-        .catch(err => {
-          reject(err)
-        })
+        // // Softmax: layer 5
+        let softmax5 = this.math.matMul(local4, this.softmaxWeights)
+        softmax5 = this.math.add(softmax5, this.softmaxBiases)
+        softmax5 = this.math.softmax(softmax5)
+
+        // resolve result
+        resolve(softmax5.dataSync())
+      } catch (err) {
+        reject(err)
+      }
     })
   },
 
+  /**
+   * Perform the inference of cifar-10 network, with multi devices
+   * @param tensor1D: 1D tensor [batch_szie * height * width * channel]
+   * @returns Promise
+   */
   performMultiInference: function (tensor1D) {
     return new Promise((resolve, reject) => {
-      taskManager.createConnection(this.wsServerIP)
+      taskManager.createConnection(cifarSettings.wsServerIP)
         .then(res => {
+          console.log('-- Status: Connection Formed --')
+          // TODO: slice model here
+          let model = {
+            conv1BiasesInfo: [ this.conv1Biases.dataSync(), [64] ],
+            conv1WeightsInfo: [ this.conv1Weights.dataSync(), [5, 5, 3, 64] ]
+            // conv2BiasesInfo: [ this.conv2Biases.dataSync(), [64] ],
+            // conv2WeightsInfo: [ this.conv2Weights.dataSync(), [5, 5, 3, 64] ]
+          }
           return taskManager.sendMsg({
             op: 'sendModel',
-            data: [3, 2, 1]
+            data: model
           })
         })
         .then(res => {
+          console.log('-- Status: Model Deployed --')
           console.log('Server Respond:', res)
           return taskManager.sendMsg({
             op: 'sendInputTensor',
-            data: [1, 2, 3]
+            data: tensor1D
           })
         })
         .then(res => {
+          console.log('-- Status: Task Finished --')
           console.log('Server Respond:', res)
-          resolve(res)
         })
         .catch(err => {
           console.log(err)

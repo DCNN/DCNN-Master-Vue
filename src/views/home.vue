@@ -4,7 +4,7 @@
       class="home-btn"
       type="default"
       size="large"
-      @click="onClickLoadImageData"
+      @click="onClickLoadImage"
     >
       load image
     </md-button>
@@ -42,7 +42,7 @@ export default {
     }
   },
   methods: {
-    onClickLoadImageData () {
+    onClickLoadImage () {
       this.$http.get('/static/cifar-10/test-imgs-data/data.json')
         .then(res => {
           this.tensor1D = res.data
@@ -57,7 +57,10 @@ export default {
         this.$toasted.show('please load img first')
         return
       }
-      Cifar10.performInference(this.tensor1D)
+      Cifar10.loadModel()
+        .then(res => {
+          return Cifar10.performInference(this.tensor1D)
+        })
         .then(res => {
           console.log(res)
         })
@@ -70,13 +73,18 @@ export default {
         this.$toasted.show('please load img first')
         return
       }
-      Cifar10.performMultiInference(this.tensor1D)
+      Cifar10.loadModel()
+        .then(res => {
+          console.log('model loaded')
+          return Cifar10.performMultiInference(this.tensor1D)
+        })
         .then(res => {
           console.log(res)
         })
         .catch(err => {
           console.log(err)
         })
+
     }
   },
   created () {

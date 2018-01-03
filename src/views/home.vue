@@ -24,6 +24,14 @@
     >
       multi infer
     </md-button>
+    <md-button
+      class="home-btn"
+      type="primary"
+      size="large"
+      @click="onClickTestModelCutter"
+    >
+      Test
+    </md-button>
     <md-content class="home-message">{{ result }}</md-content>
   </div>
 </template>
@@ -31,7 +39,11 @@
 <script>
 import { Array1D, NDArrayMathGPU, Scalar } from 'deeplearn'
 
+// self-defined modules
 import Cifar10 from '@/kernels/cifar-10'
+
+// debug only
+import ModelCutter from '@/kernels/model-cutter'
 
 export default {
   name: 'home',
@@ -84,7 +96,18 @@ export default {
         .catch(err => {
           console.log(err)
         })
-
+    },
+    onClickTestModelCutter () {
+      let test1DTensor = [
+        [
+          [ [1, 1, 1], [2, 2, 2], [3, 3, 3], [1, 1, 1] ],
+          [ [4, 4, 4], [5, 5, 5], [6, 6, 6], [1, 1, 1] ],
+          [ [7, 7, 7], [8, 8, 8], [9, 9, 9], [1, 1, 1] ],
+          [ [10, 10, 10], [11, 11, 11], [12, 12, 12], [1, 1, 1] ]
+        ]
+      ]
+      test1DTensor = ModelCutter.flattenArray(test1DTensor)
+      console.log(ModelCutter.cutterTensor1D(test1DTensor, [1, 4, 4, 3], 0, 1))
     }
   },
   created () {

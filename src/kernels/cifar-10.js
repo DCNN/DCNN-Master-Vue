@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Contains inference operations on CIFAR-10 dataset.
+ * @author alex-myzhao@github.com (Alex Chao)
+ */
+
 /* eslint-disable */
 import {
   Array1D, Array2D, Array3D, Array4D,
@@ -29,7 +34,9 @@ export default {
   math: ENV.math,
 
   /**
-   *  Pre-Process Image Data
+   *  Pre-Processes Image Data on 1D tensor.
+   * @param {Array} tensor1D
+   * @returns {null}
    */
   _standardlizeImageData: function (tensor1D) {
     let batchLength = cifarSettings.inputShape[0] * cifarSettings.inputShape[1]
@@ -44,7 +51,7 @@ export default {
 
   /**
    * Load Model from NetFiles
-   * @returns Promise
+   * @returns {Promise}
    */
   loadModel () {
     const varLoader = new CheckpointLoader('./static/cifar-10/14646/')
@@ -80,9 +87,9 @@ export default {
   },
 
   /**
-   * Perform the inference of cifar-10 network, with only 1 device
-   * @param tensor1D: 1D tensor [batch_szie * height * width * channel]
-   * @returns Promise
+   * Performs the inference of cifar-10 network, with only 1 device.
+   * @param {Array} tensor1D: 1D tensor [batch_szie * height * width * channel]
+   * @returns {Promise}
    */
   performInference: function (tensor1D) {
     return new Promise((resolve, reject) => {
@@ -128,9 +135,9 @@ export default {
   },
 
   /**
-   * Perform the inference of cifar-10 network, with multi devices
-   * @param tensor1D: 1D tensor [batch_szie * height * width * channel]
-   * @returns Promise
+   * Performs the inference of cifar-10 network, with multi devices.
+   * @param {Array} tensor1D: 1D tensor [batch_szie * height * width * channel]
+   * @returns {Promise}
    */
   performMultiInference: function (tensor1D) {
     return new Promise((resolve, reject) => {

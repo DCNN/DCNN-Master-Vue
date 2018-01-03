@@ -19,4 +19,9 @@ export default {
     'airplane', 'automobile', 'bird', 'cat', 'deer',
     'dog', 'frog', 'horse', 'ship', 'truck'
   ],
+
+  /**
+   * CNN Statistics
+   */
+  maxFilterSize: 5
 }

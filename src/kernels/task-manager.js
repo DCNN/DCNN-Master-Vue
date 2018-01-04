@@ -27,6 +27,23 @@ export default {
     })
   },
 
+  sendModel: function (layersInfoArr) {
+    let layersSendPromises = []
+    for (let i = 0; i < layersInfoArr.length; ++i) {
+      let layerMsgToSend = {
+        op: 'sendLayer',
+        hasMore: i !== layersInfoArr.length - 1,
+        data: {
+          layerName: 'conv' + i,
+          convBiasesInfo: layersInfoArr[i].convBiasesInfo,
+          convWeightsInfo: layersInfoArr[i].convWeightsInfo
+        }
+      }
+      layersSendPromises.push(this.sendMsg(layerMsgToSend))
+    }
+    return Promise.all(layersSendPromises)
+  },
+
   sendMsg: function (jsonMsg) {
     return new Promise((resolve, reject) => {
       if (this.ws === null || this.ws.readyState != WebSocket.OPEN) {
@@ -34,12 +51,11 @@ export default {
         reject('send msg failed')
       }
 
-      // console.log(this.TAG, 'send msg:', JSON.stringify(jsonMsg))
       this.ws.send(JSON.stringify(jsonMsg))
 
       this.ws.onmessage = (event) => {
         var recData = JSON.parse(event.data)
-        resolve(recData.data)
+        resolve(recData)
       }
 
       this.ws.onerror = (event) => {

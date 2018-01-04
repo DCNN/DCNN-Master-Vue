@@ -144,37 +144,38 @@ export default {
       taskManager.createConnection(cifarSettings.wsServerIP)
         .then(res => {
           console.log('-- Status: Connection Formed --')
-          // TODO: slice model here
-          let model = {
-            conv1BiasesInfo: [ this.conv1Biases.dataSync(), [64] ],
-            conv1WeightsInfo: [ this.conv1Weights.dataSync(), [5, 5, 3, 64] ]
-            // conv2BiasesInfo: [ this.conv2Biases.dataSync(), [64] ],
-            // conv2WeightsInfo: [ this.conv2Weights.dataSync(), [5, 5, 3, 64] ]
+          let layer1 = {
+            convBiasesInfo: [ this.conv1Biases.dataSync(), [64] ],
+            convWeightsInfo: [ this.conv1Weights.dataSync(), [5, 5, 3, 64] ]
           }
-          return taskManager.sendMsg({
-            op: 'sendModel',
-            data: model
-          })
+          let layer2 = {
+            convBiasesInfo: [ this.conv2Biases.dataSync(), [64] ],
+            convWeightsInfo: [ this.conv2Weights.dataSync(), [5, 5, 3, 64] ]
+          }
+          return taskManager.sendModel([layer2])
+          // return taskManager.sendModel([layer1, layer2])
         })
+        // .then(res => {
+        //   console.log('-- Status: Model Deployed --')
+        //   console.log('Server Respond:', res)
+        //   /** TODO: Divide Tensor Here  */
+        //   return taskManager.sendMsg({
+        //     op: 'sendInputTensor',
+        //     data: tensor1D
+        //   })
+        // })
         .then(res => {
-          console.log('-- Status: Model Deployed --')
+          // console.log('-- Status: Task Finished --')
           console.log('Server Respond:', res)
-          return taskManager.sendMsg({
-            op: 'sendInputTensor',
-            data: tensor1D
-          })
-        })
-        .then(res => {
-          console.log('-- Status: Task Finished --')
-          console.log('Server Respond:', res)
+          console.log(res)
         })
         .catch(err => {
           console.log(err)
           reject(err)
         })
-        .finally(() => {
-          taskManager.closeConnection()
-        })
+        // .finally(() => {
+        //   taskManager.closeConnection()
+        // })
     })
   }
 }

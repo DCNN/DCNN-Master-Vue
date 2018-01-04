@@ -1,15 +1,25 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Main from '@/views/home'
+
+import Master from '@/views/master'
+import Slave from '@/views/slave'
 
 Vue.use(Router)
 
 export default new Router({
+  mode: 'history',
   routes: [
     {
-      path: '/',
-      name: 'Main',
-      component: Main
+      path: '/slave',
+      name: 'slave',
+      component: Slave
+    }, {
+      path: '/master',
+      name: 'master',
+      component: Master
+    }, {
+      path: '*',
+      component: Master
     }
   ]
 })

@@ -1,7 +1,7 @@
 <template>
   <div>
     <md-button
-      class="home-btn"
+      class="master-btn"
       type="default"
       size="large"
       @click="onClickLoadImage"
@@ -9,7 +9,7 @@
       load image
     </md-button>
     <md-button
-      class="home-btn"
+      class="master-btn"
       type="default"
       size="large"
       @click="onClickInfer"
@@ -17,7 +17,7 @@
       infer
     </md-button>
     <md-button
-      class="home-btn"
+      class="master-btn"
       type="default"
       size="large"
       @click="onClickMultiInfer"
@@ -25,14 +25,14 @@
       multi infer
     </md-button>
     <md-button
-      class="home-btn"
+      class="master-btn"
       type="primary"
       size="large"
       @click="onClickTestModelCutter"
     >
       Test
     </md-button>
-    <md-content class="home-message">{{ result }}</md-content>
+    <md-content class="master-message">{{ result }}</md-content>
   </div>
 </template>
 
@@ -46,7 +46,7 @@ import Cifar10 from '@/kernels/cifar-10'
 import ModelCutter from '@/kernels/model-cutter'
 
 export default {
-  name: 'home',
+  name: 'master',
   data () {
     return {
       result: null,
@@ -116,7 +116,7 @@ export default {
 </script>
 
 <style scoped>
-.home-message {
+.master-message {
   text-align: left;
   overflow: scroll;
   word-break: break-all;
@@ -128,7 +128,7 @@ export default {
   color: black;
 }
 
-.home-btn {
+.master-btn {
   width: 92vw;
   margin: 1vh auto;
 }

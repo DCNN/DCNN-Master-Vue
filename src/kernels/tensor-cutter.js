@@ -1,5 +1,5 @@
 export default {
-  TAG: 'MODEL CUTTER:',
+  TAG: 'TENSOR_CUTTER:',
 
   /**
    * Cuts a piece from origin tensor

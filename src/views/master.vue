@@ -28,7 +28,7 @@
       class="master-btn"
       type="primary"
       size="large"
-      @click="onClickTestModelCutter"
+      @click="onClickTestTensorCutter"
     >
       Test
     </md-button>
@@ -43,7 +43,7 @@ import { Array1D, NDArrayMathGPU, Scalar } from 'deeplearn'
 import Cifar10 from '@/kernels/cifar-10'
 
 // debug only
-import ModelCutter from '@/kernels/model-cutter'
+import TensorCutter from '@/kernels/tensor-cutter'
 
 export default {
   name: 'master',
@@ -54,11 +54,12 @@ export default {
     }
   },
   methods: {
+    // OnClick Listeners
     onClickLoadImage () {
       this.$http.get('/static/cifar-10/test-imgs-data/data.json')
         .then(res => {
           this.tensor1D = res.data
-          console.log(this.tensor1D)
+          this.$toasted.show('Success: load image')
         })
         .catch(err => {
           console.log(err)
@@ -66,7 +67,7 @@ export default {
     },
     onClickInfer () {
       if (this.tensor1D === null) {
-        this.$toasted.show('please load img first')
+        this.$toasted.show('Warning: please load images first')
         return
       }
       Cifar10.loadModel()
@@ -75,6 +76,7 @@ export default {
         })
         .then(res => {
           console.log(res)
+          this.$toasted.show('Success: Check console to get the result')
         })
         .catch(err => {
           console.log(err)
@@ -82,12 +84,12 @@ export default {
     },
     onClickMultiInfer () {
       if (this.tensor1D === null) {
-        this.$toasted.show('please load img first')
+        this.$toasted.show('Warning: please load images first')
         return
       }
       Cifar10.loadModel()
         .then(res => {
-          console.log('model loaded')
+          console.log('Debug: model loaded')
           return Cifar10.performMultiInference(this.tensor1D)
         })
         .then(res => {
@@ -97,7 +99,9 @@ export default {
           console.log(err)
         })
     },
-    onClickTestModelCutter () {
+
+    // Debug only
+    onClickTestTensorCutter () {
       let test1DTensor = [
         [
           [ [1, 1, 1], [2, 2, 2], [3, 3, 3], [1, 1, 1] ],
@@ -106,8 +110,8 @@ export default {
           [ [10, 10, 10], [11, 11, 11], [12, 12, 12], [1, 1, 1] ]
         ]
       ]
-      test1DTensor = ModelCutter.flattenArray(test1DTensor)
-      console.log(ModelCutter.cutterTensor1D(test1DTensor, [1, 4, 4, 3], 0, 1))
+      test1DTensor = TensorCutter.flattenArray(test1DTensor)
+      console.log(TensorCutter.cutterTensor1D(test1DTensor, [1, 4, 4, 3], 0, 1))
     }
   },
   created () {

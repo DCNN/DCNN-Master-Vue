@@ -27,23 +27,6 @@ export default {
     })
   },
 
-  sendModel: function (layersInfoArr) {
-    let layersSendPromises = []
-    for (let i = 0; i < layersInfoArr.length; ++i) {
-      let layerMsgToSend = {
-        op: 'sendLayer',
-        hasMore: i !== layersInfoArr.length - 1,
-        data: {
-          layerName: 'conv' + i,
-          convBiasesInfo: layersInfoArr[i].convBiasesInfo,
-          convWeightsInfo: layersInfoArr[i].convWeightsInfo
-        }
-      }
-      layersSendPromises.push(this.sendMsg(layerMsgToSend))
-    }
-    return Promise.all(layersSendPromises)
-  },
-
   sendMsg: function (jsonMsg) {
     return new Promise((resolve, reject) => {
       if (this.ws === null || this.ws.readyState != WebSocket.OPEN) {

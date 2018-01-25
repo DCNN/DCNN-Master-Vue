@@ -5,7 +5,7 @@ import {
 } from 'deeplearn'
 
 import CifarSettings from '@/settings/cifar-settings'
-import ModelCutter from '@/kernels/model-cutter'
+import TensorCutter from '@/kernels/tensor-cutter'
 
 export default {
   /**
@@ -85,10 +85,10 @@ export default {
     let newRange = [this.dataRange[0], this.dataRange[1]]
 
     if (this.dataRange[0] === 0) {
-      result1Dtensor = ModelCutter.cutterTensor1D(result1Dtensor, shape, 0, shape[1] - overlap)
+      result1Dtensor = TensorCutter.cutterTensor1D(result1Dtensor, shape, 0, shape[1] - overlap)
       newRange = [this.dataRange[0], this.dataRange[1] - overlap]
     } else {
-      result1Dtensor = ModelCutter.cutterTensor1D(result1Dtensor, shape, shape[1] + overlap, shape[1] - overlap)
+      result1Dtensor = TensorCutter.cutterTensor1D(result1Dtensor, shape, shape[1] + overlap, shape[1] - overlap)
       newRange = [this.dataRange[0] + overlap, this.dataRange[1] - overlap]
     }
 

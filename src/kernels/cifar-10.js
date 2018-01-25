@@ -14,9 +14,7 @@ import taskManager from '@/kernels/task-manager'
 import cifarSettings from '@/settings/cifar-settings'
 
 export default {
-  /**
-   *  Model Desc
-   */
+  // Model Descriptions {NDArray}
   conv1Biases: null,     // 64
   conv1Weights: null,    // 5 5 3 64
   conv2Biases: null,     // 64
@@ -28,13 +26,11 @@ export default {
   softmaxBiases: null,   // 10
   softmaxWeights: null,  // 192 10
 
-  /**
-   *  NDArrayMathGPU
-   */
+  // {NDArrayMathGPU}
   math: ENV.math,
 
   /**
-   *  Pre-Processes Image Data on 1D tensor.
+   * Pre-Processes Image Data on 1D tensor.
    * @param {Array} tensor1D
    * @returns {null}
    */
@@ -87,7 +83,7 @@ export default {
   },
 
   /**
-   * Performs the inference of cifar-10 network, with only 1 device.
+   * Performs the local inference of cifar-10 network, with only 1 device.
    * @param {Array} tensor1D: 1D tensor [batch_szie * height * width * channel]
    * @returns {Promise}
    */
@@ -121,7 +117,7 @@ export default {
         local4 = this.math.add(local4, this.local4Biases)
         local4 = this.math.relu(local4)
 
-        // // Softmax: layer 5
+        // Softmax: layer 5
         let softmax5 = this.math.matMul(local4, this.softmaxWeights)
         softmax5 = this.math.add(softmax5, this.softmaxBiases)
         softmax5 = this.math.softmax(softmax5)
@@ -144,38 +140,12 @@ export default {
       taskManager.createConnection(cifarSettings.wsServerIP)
         .then(res => {
           console.log('-- Status: Connection Formed --')
-          let layer1 = {
-            convBiasesInfo: [ this.conv1Biases.dataSync(), [64] ],
-            convWeightsInfo: [ this.conv1Weights.dataSync(), [5, 5, 3, 64] ]
-          }
-          let layer2 = {
-            convBiasesInfo: [ this.conv2Biases.dataSync(), [64] ],
-            convWeightsInfo: [ this.conv2Weights.dataSync(), [5, 5, 3, 64] ]
-          }
-          return taskManager.sendModel([layer2])
-          // return taskManager.sendModel([layer1, layer2])
-        })
-        // .then(res => {
-        //   console.log('-- Status: Model Deployed --')
-        //   console.log('Server Respond:', res)
-        //   /** TODO: Divide Tensor Here  */
-        //   return taskManager.sendMsg({
-        //     op: 'sendInputTensor',
-        //     data: tensor1D
-        //   })
-        // })
-        .then(res => {
-          // console.log('-- Status: Task Finished --')
           console.log('Server Respond:', res)
-          console.log(res)
         })
         .catch(err => {
           console.log(err)
           reject(err)
         })
-        // .finally(() => {
-        //   taskManager.closeConnection()
-        // })
     })
   }
 }

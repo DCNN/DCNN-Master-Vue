@@ -6,54 +6,32 @@ import {
 
 import CifarSettings from '@/settings/cifar-settings'
 import TensorCutter from '@/kernels/tensor-cutter'
+import WSServer from '@/kernels/ws-server'
 
 export default {
-  /**
-   * Maintain a WebSocket Instance
-   */
-  ws: null,
-
   localIP: null,
 
   dataRange: null,
   localTensor4D: null,  // {Array4D} Keep half-done result of the inference
 
-  // part of the model
+  // Model Descriptions {NDArray}
   conv1Biases: null,
   conv1Weights: null,
   conv2Biases: null,
   conv2Weights: null,
 
+  // Mark if the model has been loaded
+  isModelLoaded: false,
+
+  // NDArrayMathGPU
+  math: ENV.math,
+
   /**
-   * Start to work for the server.
-   * @returns {Promise} Returns a resolved promise when connection is built.
+   * Load the model from NetFiles.
+   * @returns {Promise}
    */
-  startWorkForMaster: function () {
-    return new Promise((resolve, reject) => {
-      // create connection
-      this.ws = new WebSocket(CifarSettings.wsServerIP)
-
-      // set up listeners
-      this.ws.onopen = (event) => {
-        resolve(event)
-      }
-
-      this.ws.onerror = (event) => {
-        reject(event)
-      }
-
-      this.ws.onmessage = (event) => {
-        let recData = JSON.parse(event.data)
-        if (recData.op === 'init') {
-          this.dataRange = recData.range
-          this._handleInitOp(recData.shape, recData.tensor1D, recData.overlapSize)
-        }
-      }
-    })
-  },
-
   loadModel () {
-    const varLoader = new CheckpointLoader('./static/cifar-10/14646/')
+    const varLoader = new CheckpointLoader(`${CifarSettings.httpServerIP}/static/cifar-10/14646/`)
     return new Promise((resolve, reject) => {
       varLoader.getAllVariables()
         .then(vars => {
@@ -73,7 +51,55 @@ export default {
     })
   },
 
-  _handleInitOp (shape, tensor1D, overlap) {
+  /**
+   * Register to the master.
+   * @returns {Promise}
+   */
+  registerToMaster: function () {
+    return WSServer.createConnection(CifarSettings.wsServerIP)
+      .then(res => {
+        // set up listeners
+        return Promise.resolve(res)
+      })
+      .catch(err => {
+        return Promise.reject(err)
+      })
+  },
+
+  /**
+   * Set Cifar 10 Listeners.
+   */
+  setCifarListeners: function () {
+
+  },
+
+  // /**
+  //  * Register to the Master
+  //  * @returns {Promise}
+  //  */
+  // startWorkForMaster: function () {
+  //   WSServer.createConnection(CifarSettings.wsServerIP)
+  //     .then(res => {
+  //       // exec conv layer 1
+  //       console.log('> Status: Connection Formed')
+  //       let recData = JSON.parse(res)
+  //       if (recData.op === 'init') {
+  //         this.dataRange = recData.range
+  //         return this.execConvLayer1(recData.shape, recData.tensor1D, recData.overlapSize)
+  //       } else {
+  //         return Promise.reject(err)
+  //       }
+  //     })
+  //     .then(res => {
+  //       // exec conv layer 2
+  //     })
+  //     .catch(err => {
+  //       console.log(err)
+  //       reject(err)
+  //     })
+  // },
+
+  execConvLayer1 (shape, tensor1D, overlap) {
     this.localTensor4D = Array4D.new(shape, tensor1D)
 
     // perform the conv op of layer 1
@@ -93,7 +119,7 @@ export default {
     }
 
     // reduce to the server
-    this.ws.send({
+    WSServer.send({
       op: 'slave-reduce',
       data: {
         from: this.localIP,

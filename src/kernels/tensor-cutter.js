@@ -19,7 +19,6 @@ export default {
     for (let curBatch = 0; curBatch * batch_length < tensor1D.length; ++curBatch) {
       let _from = curBatch * batch_length + fromHeight * width * channel
       let _to = curBatch * batch_length + toHeight * width * channel
-      console.log(this.TAG, _from, _to)
       cutTensor1D = cutTensor1D.concat(tensor1D.slice(_from, _to))
     }
     return cutTensor1D

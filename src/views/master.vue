@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="master">
     <md-button
-      class="master-btn"
+      class="dcnn-button-large"
       type="default"
       size="large"
       @click="onClickLoadImage"
@@ -9,7 +9,7 @@
       load image
     </md-button>
     <md-button
-      class="master-btn"
+      class="dcnn-button-large"
       type="default"
       size="large"
       @click="onClickInfer"
@@ -17,31 +17,19 @@
       infer
     </md-button>
     <md-button
-      class="master-btn"
+      class="dcnn-button-large"
       type="default"
       size="large"
-      @click="onClickMultiInfer"
-    >
-      multi infer
-    </md-button>
-    <md-button
-      class="master-btn"
-      type="primary"
-      size="large"
-      @click="onClickTestTensorCutter"
+      @click="onClickTest"
     >
       Test
     </md-button>
-    <md-content class="master-message">{{ result }}</md-content>
+    <md-content class="dcnn-message-area">{{ result }}</md-content>
   </div>
 </template>
 
 <script>
-import { Array1D, NDArrayMathGPU, Scalar } from 'deeplearn'
-
-// self-defined modules
 import Cifar10 from '@/kernels/cifar-10'
-
 // debug only
 import TensorCutter from '@/kernels/tensor-cutter'
 
@@ -67,7 +55,7 @@ export default {
     },
     onClickInfer () {
       if (this.tensor1D === null) {
-        this.$toasted.show('Warning: please load images first')
+        this.$toasted.show('Error: Please load images first')
         return
       }
       Cifar10.loadModel()
@@ -75,29 +63,16 @@ export default {
           return Cifar10.performInference(this.tensor1D)
         })
         .then(res => {
-          console.log(res)
-          this.$toasted.show('Success: Check console to get the result')
+          this.result = res
+          this.$toasted.show('Success: Inference finished')
         })
         .catch(err => {
           console.log(err)
         })
     },
-    onClickMultiInfer () {
-      if (this.tensor1D === null) {
-        this.$toasted.show('Warning: please load images first')
-        return
-      }
-      Cifar10.loadModel()
-        .then(res => {
-          console.log('Debug: model loaded')
-          return Cifar10.performMultiInference(this.tensor1D)
-        })
-        .then(res => {
-          console.log(res)
-        })
-        .catch(err => {
-          console.log(err)
-        })
+
+    // test
+    onClickTest () {
     },
 
     // Debug only
@@ -114,26 +89,13 @@ export default {
       console.log(TensorCutter.cutterTensor1D(test1DTensor, [1, 4, 4, 3], 0, 1))
     }
   },
-  created () {
-  }
+  created () {}
 }
 </script>
 
 <style scoped>
-.master-message {
-  text-align: left;
-  overflow: scroll;
-  word-break: break-all;
-  margin: 2vh auto;
-  padding: 2vh 2vw;
-  height: 50vh;
-  width: 90vw;
-  background-color: rgba(0, 0, 0, 0.1);
-  color: black;
-}
-
-.master-btn {
-  width: 92vw;
-  margin: 1vh auto;
+.master {
+  margin-top: 2vh;
 }
 </style>
+

@@ -1,0 +1,17 @@
+.dcnn-message-area {
+  text-align: left;
+  overflow: scroll;
+  word-break: break-all;
+  margin: 2vh auto;
+  padding: 2vh 2vw;
+  height: 50vh;
+  width: 92vw;
+  background-color: rgba(0, 0, 0, 0.1);
+  color: black;
+}
+
+.dcnn-button-large {
+  width: 92vw;
+  height: 6vh;
+  margin: 1vh auto;
+}

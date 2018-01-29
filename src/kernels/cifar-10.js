@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains inference operations on CIFAR-10 dataset.
+ * @fileoverview Contains inference operations on CIFAR-10 dataset. This is the master operations.
  * @author alex-myzhao@github.com (Alex Chao)
  */
 
@@ -9,9 +9,10 @@ import {
   ENV, CheckpointLoader
 } from 'deeplearn'
 
-import mathExtra from '@/kernels/math-extra'
-import taskManager from '@/kernels/task-manager'
-import cifarSettings from '@/settings/cifar-settings'
+import MathExtra from '@/kernels/math-extra'
+import WSServer from '@/kernels/ws-server'
+import CifarSettings from '@/settings/cifar-settings'
+import TensorCutter from '@/kernels/tensor-cutter'
 
 export default {
   // Model Descriptions {NDArray}
@@ -26,23 +27,73 @@ export default {
   softmaxBiases: null,   // 10
   softmaxWeights: null,  // 192 10
 
-  // {NDArrayMathGPU}
+  // Mark if the model has been loaded
+  isModelLoaded: false,
+
+  // NDArrayMathGPU
   math: ENV.math,
 
   /**
    * Pre-Processes Image Data on 1D tensor.
+   * Same with the pre-processing methods during training period.
+   * @param {Array} resultTensor1D [batch_size * height * width * channel]
+   * @returns {Array}
+   */
+  _translateResult: function (resultTensor1D) {
+    let resultList = []
+    let labelNum = CifarSettings.labels.length
+    for (let i = 0; i < resultTensor1D.length; i += labelNum) {
+      let maxIndex = 0
+      for (let j = 0; j < labelNum; ++j) {
+        if (resultTensor1D[i + j] > resultTensor1D[i + maxIndex]) {
+          maxIndex = j
+        }
+      }
+      resultList.push(CifarSettings.labels[maxIndex])
+    }
+    return resultList
+  },
+
+  /**
+   * Pre-Processes Image Data on 1D tensor.
+   * Same with the pre-processing methods during training period.
    * @param {Array} tensor1D
    * @returns {null}
    */
   _standardlizeImageData: function (tensor1D) {
-    let batchLength = cifarSettings.inputShape[0] * cifarSettings.inputShape[1]
+    let batchLength = CifarSettings.inputShape[0] * CifarSettings.inputShape[1]
     for (let i = 0; i < tensor1D.length; i += batchLength) {
-      let mean = mathExtra.meanFromTo(tensor1D, i, i + batchLength)
-      let stddev = mathExtra.stddevFromTo(tensor1D, i, i + batchLength)
+      let mean = MathExtra.meanFromTo(tensor1D, i, i + batchLength)
+      let stddev = MathExtra.stddevFromTo(tensor1D, i, i + batchLength)
       for (let j = i; j < i + batchLength; ++j) {
         tensor1D[j] = (tensor1D[j] - mean) / stddev
       }
     }
+  },
+
+  _computeWorkerRanges: function () {
+    let height = CifarSettings.inputShape[0]
+    let averHeight = Math.floor(height / CifarSettings.workerNum)
+    let paddingHeight = Math.floor(CifarSettings.maxFilterSize / 2)
+    let workerInitRange = []
+    let workerMaintainRange = []
+    let cursor = 0
+    for (let i = 0; i < CifarSettings.workerNum; ++i) {
+      if (i === 0) {
+        cursor = averHeight
+        workerInitRange.push([0, cursor + paddingHeight])
+        workerMaintainRange.push([0, cursor])
+      } else if (i === CifarSettings.workerNum - 1) {
+        workerInitRange.push([cursor - paddingHeight, height])
+        workerMaintainRange.push([cursor, height])
+        cursor = height
+      } else {
+        workerInitRange.push([cursor - paddingHeight, cursor + averHeight + paddingHeight])
+        workerMaintainRange.push([cursor, cursor + averHeight])
+        cursor += averHeight
+      }
+    }
+    return [workerInitRange, workerMaintainRange]
   },
 
   /**
@@ -74,6 +125,7 @@ export default {
           this.softmaxBiases = vars['softmax_linear/biases']    // 10
           this.softmaxWeights = vars['softmax_linear/weights']  // 192 10
 
+          this.isModelLoaded = true
           resolve()
         })
         .catch(err => {
@@ -88,10 +140,14 @@ export default {
    * @returns {Promise}
    */
   performInference: function (tensor1D) {
+    if (!this.isModelLoaded) {
+      return Promise.reject('Error: Model Not Loaded')
+    }
+
     return new Promise((resolve, reject) => {
       try {
         this._standardlizeImageData(tensor1D)
-        let tensor4D = Array4D.new([cifarSettings.batchSize, cifarSettings.inputShape[0], cifarSettings.inputShape[1], 3], tensor1D)
+        let tensor4D = Array4D.new([CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3], tensor1D)
 
         // Conv: layer 1
         let conv1 = this.math.conv2d(tensor4D, this.conv1Weights, this.conv1Biases, [1, 1], 'same')
@@ -105,7 +161,7 @@ export default {
 
         // flatten tensor, ready to perform matrix multiplication
         let [curB, curH, curW, curC] = pool2.shape
-        pool2 = pool2.reshape([cifarSettings.batchSize, curH * curW * curC])
+        pool2 = pool2.reshape([CifarSettings.batchSize, curH * curW * curC])
 
         // Local: layer 3
         let local3 = this.math.matMul(pool2, this.local3Weights)
@@ -123,7 +179,7 @@ export default {
         softmax5 = this.math.softmax(softmax5)
 
         // resolve result
-        resolve(softmax5.dataSync())
+        resolve(this._translateResult(softmax5.dataSync()))
       } catch (err) {
         reject(err)
       }
@@ -136,16 +192,28 @@ export default {
    * @returns {Promise}
    */
   performMultiInference: function (tensor1D) {
-    return new Promise((resolve, reject) => {
-      taskManager.createConnection(cifarSettings.wsServerIP)
-        .then(res => {
-          console.log('-- Status: Connection Formed --')
-          console.log('Server Respond:', res)
-        })
-        .catch(err => {
-          console.log(err)
-          reject(err)
-        })
-    })
+    // preparation
+    this._standardlizeImageData(tensor1D)
+    let [workerInitRange, workerMaintainRange] = this._computeWorkerRanges()
+    let tensorParts = []
+    for (let i = 0; i < workerInitRange.length; ++i) {
+      tensorParts.push(TensorCutter.cutterTensor1D(
+        tensor1D,
+        [CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3],
+        workerInitRange[i][0], workerInitRange[i][1]))
+    }
+    console.log(tensorParts)
+
+    // return new Promise((resolve, reject) => {
+    //   WSServer.createConnection(CifarSettings.wsServerIP)
+    //     .then(res => {
+    //       console.log('> Status: Connection Formed')
+    //       resolve(res)
+    //     })
+    //     .catch(err => {
+    //       console.log(err)
+    //       reject(err)
+    //     })
+    // })
   }
 }

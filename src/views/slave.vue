@@ -1,6 +1,22 @@
 <template>
-  <div>
-    <md-content class="slave-message">{{ msg }}</md-content>
+  <div id="slave">
+    <md-button
+      class="dcnn-button-large"
+      type="default"
+      size="large"
+      @click="onClickLoadModel"
+    >
+      load model
+    </md-button>
+    <md-button
+      class="dcnn-button-large"
+      type="default"
+      size="large"
+      @click="onClickRegister"
+    >
+      register
+    </md-button>
+    <md-content class="dcnn-message-area">{{ msg }}</md-content>
   </div>
 </template>
 
@@ -11,37 +27,41 @@ export default {
   name: 'slave',
   data () {
     return {
-      msg: 'Connect to the Server'
+      msg: 'This is a Slave Node.'
+    }
+  },
+  methods: {
+    onClickLoadModel () {
+      ConvWorker.loadModel()
+        .then(res => {
+          this.msg = 'Model Loaded...'
+        })
+        .catch(err => {
+          this.msg = err
+          console.log(err)
+        })
+    },
+    onClickRegister () {
+      ConvWorker.registerToMaster()
+        .then(res => {
+          this.$toasted.show('Info: Registered')
+          ConvWorker.setCifarListeners()
+        })
+        .catch(err => {
+          console.log(err)
+          this.$toasted.show('Error: Failed')
+        })
     }
   },
   created () {
-    ConvWorker.loadModel()
-      .then(res => {
-        this.msg += '\nModel Loaded...'
-        return ConvWorker.startWorkForMaster()
-      })
-      .then(res => {
-        this.msg = '\nWorking for the Master...'
-      })
-      .catch(err => {
-        console.log(err)
-      })
 
   }
 }
 </script>
 
-<style>
-.slave-message {
-  text-align: left;
-  overflow: scroll;
-  word-break: break-all;
-  margin: 2vh auto;
-  padding: 2vh 2vw;
-  height: 50vh;
-  width: 90vw;
-  background-color: rgba(0, 0, 0, 0.1);
-  color: black;
+<style scoped>
+#slave {
+  margin-top: 2vh;
 }
 </style>
 

@@ -13,6 +13,10 @@ import { ENV, NDArrayMath } from 'deeplearn'
 import router from './router'          // enable vue router
 import store from './store/index.js'   // enable vuex
 
+import CifarSettings from '@/settings/cifar-settings'
+
+import './style/dcnn.css'
+
 Vue.config.productionTip = false
 
 // Vue Material
@@ -20,7 +24,7 @@ Vue.use(VueMaterial)
 
 // Vue Toast
 Vue.use(Toasted, {
-  position: 'top-center',
+  position: 'bottom-center',
   fullWidth: true,
   duration: 2500
 })
@@ -29,7 +33,7 @@ Vue.use(Toasted, {
 Vue.use(VueAxios, axios)
 
 // axios settings
-Vue.axios.defaults.baseURL = 'http://localhost:8080'
+Vue.axios.defaults.baseURL = CifarSettings.httpServerIP
 
 // deeplearnjs config
 let math = new NDArrayMath('webgl', false)

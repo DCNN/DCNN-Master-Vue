@@ -1,27 +1,25 @@
-export default {
-  /**
-   *  WebSocket Pre-Settings
-   */
-  wsServerIP: 'ws://192.168.199.112:8888',
+export default (function () {
+  let masterIP = 'localhost'
+  return {
+    // HTTP Pre-Settings
+    httpServerIP: `http://${masterIP}:8080`,
 
-  /**
-   * Group Workers Pre-Settings
-   */
-  workerNum: 1,    // the number of Workers
-  workerCap: [1],  // Worker's Capability
+    // WebSocket Pre-Settings
+    wsServerIP: `ws://${masterIP}:8888`,
 
-  /**
-   *  CNN Pre-Settings
-   */
-  batchSize: 4,
-  inputShape: [24, 24],
-  labels: [
-    'airplane', 'automobile', 'bird', 'cat', 'deer',
-    'dog', 'frog', 'horse', 'ship', 'truck'
-  ],
+    // Group Workers Pre-Settings
+    workerNum: 3,    // the number of Workers
+    workerCap: [1, 1, 1],  // Worker's Capability
 
-  /**
-   * CNN Statistics
-   */
-  maxFilterSize: 5
-}
+    // CNN Pre-Settings
+    batchSize: 4,
+    inputShape: [24, 24], // [height * width]
+    labels: [
+      'airplane', 'automobile', 'bird', 'cat', 'deer',
+      'dog', 'frog', 'horse', 'ship', 'truck'
+    ],
+
+    // CNN Statistics
+    maxFilterSize: 3
+  }
+})()

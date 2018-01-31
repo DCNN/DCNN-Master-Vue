@@ -30,8 +30,7 @@
 
 <script>
 import Cifar10 from '@/kernels/cifar-10'
-// debug only
-import TensorCutter from '@/kernels/tensor-cutter'
+import Tensor from '@/kernels/tensor'
 
 export default {
   name: 'master',
@@ -44,6 +43,10 @@ export default {
   methods: {
     // OnClick Listeners
     onClickLoadImage () {
+      if (this.tensor1D !== null) {
+        this.$toasted.show('Info: image already loaded')
+        return
+      }
       this.$http.get('/static/cifar-10/test-imgs-data/data.json')
         .then(res => {
           this.tensor1D = res.data
@@ -73,20 +76,30 @@ export default {
 
     // test
     onClickTest () {
-    },
-
-    // Debug only
-    onClickTestTensorCutter () {
       let test1DTensor = [
         [
           [ [1, 1, 1], [2, 2, 2], [3, 3, 3], [1, 1, 1] ],
-          [ [4, 4, 4], [5, 5, 5], [6, 6, 6], [1, 1, 1] ],
-          [ [7, 7, 7], [8, 8, 8], [9, 9, 9], [1, 1, 1] ],
-          [ [10, 10, 10], [11, 11, 11], [12, 12, 12], [1, 1, 1] ]
+          [ [4, 4, 4], [5, 55, 5], [6, 6, 6], [1, 1, 1] ]
+        ],
+        [
+          [ [1, 1, 1], [2, 2, 2], [3, 3, 3], [1, 1, 1] ],
+          [ [4, 4, 4], [5, 65, 5], [6, 6, 6], [1, 1, 1] ]
         ]
       ]
-      test1DTensor = TensorCutter.flattenArray(test1DTensor)
-      console.log(TensorCutter.cutterTensor1D(test1DTensor, [1, 4, 4, 3], 0, 1))
+      test1DTensor = Tensor.flattenArray(test1DTensor)
+
+      let updateTensor1D = [
+        [
+          [ [666, 6, 6], [666, 6, 6], [666, 6, 6], [666, 6, 6] ]
+        ],
+        [
+          [ [777, 6, 6], [777, 6, 6], [777, 6, 6], [777, 6, 6] ]
+        ]
+      ]
+      updateTensor1D = Tensor.flattenArray(updateTensor1D)
+
+      Tensor.updateTensor1D(test1DTensor, [2, 2, 4, 3], 1, 2, updateTensor1D)
+      console.log(test1DTensor)
     }
   },
   created () {}

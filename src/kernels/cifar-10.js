@@ -12,7 +12,7 @@ import {
 import MathExtra from '@/kernels/math-extra'
 import WSServer from '@/kernels/ws-server'
 import CifarSettings from '@/settings/cifar-settings'
-import TensorCutter from '@/kernels/tensor-cutter'
+import Tensor from '@/kernels/tensor'
 
 export default {
   // Model Descriptions {NDArray}
@@ -33,11 +33,15 @@ export default {
   // NDArrayMathGPU
   math: ENV.math,
 
+  // DCNN only.
+  processingTensor1D: null,  // processing tensor
+  processingStage: null,     // 'Wait4Conv1', 'Wait4Conv2'
+
   /**
    * Pre-Processes Image Data on 1D tensor.
    * Same with the pre-processing methods during training period.
    * @param {Array} resultTensor1D [batch_size * height * width * channel]
-   * @returns {Array}
+   * @returns {Array} [batch_size]
    */
   _translateResult: function (resultTensor1D) {
     let resultList = []
@@ -71,6 +75,11 @@ export default {
     }
   },
 
+  /**
+   * DCNN only.
+   * Compute the height range of each worker.
+   * @returns {Array} ['the_range_workers_received', 'the_range_workers_responsible']
+   */
   _computeWorkerRanges: function () {
     let height = CifarSettings.inputShape[0]
     let averHeight = Math.floor(height / CifarSettings.workerNum)
@@ -94,6 +103,16 @@ export default {
       }
     }
     return [workerInitRange, workerMaintainRange]
+  },
+
+  /**
+   * DCNN only.
+   * Set up Master's listeners.
+   */
+  _registerMasterListeners: function () {
+    let recConvResultFunc = data => {
+
+    }
   },
 
   /**
@@ -187,6 +206,7 @@ export default {
   },
 
   /**
+   * DCNN only.
    * Performs the inference of cifar-10 network, with multi devices.
    * @param {Array} tensor1D: 1D tensor [batch_szie * height * width * channel]
    * @returns {Promise}
@@ -197,7 +217,7 @@ export default {
     let [workerInitRange, workerMaintainRange] = this._computeWorkerRanges()
     let tensorParts = []
     for (let i = 0; i < workerInitRange.length; ++i) {
-      tensorParts.push(TensorCutter.cutterTensor1D(
+      tensorParts.push(Tensor.cutterTensor1D(
         tensor1D,
         [CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3],
         workerInitRange[i][0], workerInitRange[i][1]))

@@ -1,5 +1,6 @@
 export default (function () {
-  let masterIP = '172.20.10.2'
+  // let masterIP = '172.20.10.2'
+  let masterIP = 'localhost'  // development
   return {
     // HTTP Pre-Settings
     httpServerIP: `http://${masterIP}:8080`,

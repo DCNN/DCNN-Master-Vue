@@ -43,6 +43,7 @@ export default {
   methods: {
     // OnClick Listeners
     onClickLoadImage () {
+      let start = new Date()
       if (this.tensor1D !== null) {
         this.$toasted.show('Info: image already loaded')
         return
@@ -51,12 +52,14 @@ export default {
         .then(res => {
           this.tensor1D = res.data
           this.$toasted.show('Success: load image')
+          this.$toasted.show('load image cost:' + (new Date() - start))
         })
         .catch(err => {
           console.log(err)
         })
     },
     onClickInfer () {
+      let start = new Date()
       if (this.tensor1D === null) {
         this.$toasted.show('Error: Please load images first')
         return
@@ -68,6 +71,7 @@ export default {
         .then(res => {
           this.result = res
           this.$toasted.show('Success: Inference finished')
+          this.$toasted.show('inference cost:' + (new Date() - start))
         })
         .catch(err => {
           console.log(err)
@@ -88,18 +92,7 @@ export default {
       ]
       test1DTensor = Tensor.flattenArray(test1DTensor)
 
-      let updateTensor1D = [
-        [
-          [ [666, 6, 6], [666, 6, 6], [666, 6, 6], [666, 6, 6] ]
-        ],
-        [
-          [ [777, 6, 6], [777, 6, 6], [777, 6, 6], [777, 6, 6] ]
-        ]
-      ]
-      updateTensor1D = Tensor.flattenArray(updateTensor1D)
-
-      Tensor.updateTensor1D(test1DTensor, [2, 2, 4, 3], 1, 2, updateTensor1D)
-      console.log(test1DTensor)
+      console.log(Tensor.structureTensor1D(test1DTensor, [2, 2, 4, 3]))
     }
   },
   created () {}

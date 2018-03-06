@@ -45,7 +45,6 @@ export default {
       ConvWorker.registerToMaster()
         .then(res => {
           this.$toasted.show('Info: Registered')
-          ConvWorker.setCifarListeners()
         })
         .catch(err => {
           console.log(err)

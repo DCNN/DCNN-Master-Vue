@@ -37,8 +37,11 @@ export default (function () {
           reject(event)
         }
         this.ws.onmessage = (event) => {
-          var recData = JSON.parse(event.data)
+          let recData = JSON.parse(event.data)
+          console.log('receive data')
+          console.log(recData)
           if (recData.func !== null && this.listenerList[recData.func] !== null) {
+            console.log(this.listenerList)
             this.listenerList[recData.func](recData.data)
           }
         }
@@ -58,6 +61,7 @@ export default (function () {
       }
 
       this.ws.send(JSON.stringify(jsonMsg))
+      console.log('WSServer: Send JSON')
     },
 
     /**
@@ -67,10 +71,6 @@ export default (function () {
      * @returns {boolean} whether the listener is regisered
      */
     setListener: function (listenerName, listener) {
-      if (this.listenerList[listenerName] !== null) {
-        // depulcated listener
-        return false
-      }
       this.listenerList[listenerName] = listener
       return true
     },
@@ -91,9 +91,7 @@ export default (function () {
      * @returns {null}
      */
     closeConnection: function () {
-      if (this.ws.readyState === WebSocket.OPEN) {
-        this.ws.close()
-      }
+      this.ws.close()
     }
   }
-})()
+})

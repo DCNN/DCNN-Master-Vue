@@ -15,6 +15,7 @@ import CifarSettings from '@/settings/cifar-settings'
 import Tensor from '@/kernels/tensor'
 
 export default {
+  server: WSServer(),
   // Model Descriptions {NDArray}
   conv1Biases: null,     // 64
   conv1Weights: null,    // 5 5 3 64
@@ -34,8 +35,12 @@ export default {
   math: ENV.math,
 
   // DCNN only.
-  processingTensor1D: null,  // processing tensor
+  processingTensor1D: [],  // processing tensor
+  reduceCollector: {},
+  processingTensorShape: null,
   processingStage: null,     // 'Wait4Conv1', 'Wait4Conv2'
+  workerInitRange: null,
+  workerMaintainRange: null,
 
   /**
    * Pre-Processes Image Data on 1D tensor.
@@ -82,17 +87,17 @@ export default {
    */
   _computeWorkerRanges: function () {
     let height = CifarSettings.inputShape[0]
-    let averHeight = Math.floor(height / CifarSettings.workerNum)
+    let averHeight = Math.floor(height / CifarSettings.nodesMeta.length)
     let paddingHeight = Math.floor(CifarSettings.maxFilterSize / 2)
-    let workerInitRange = []
+    let workerInitRange =  []
     let workerMaintainRange = []
     let cursor = 0
-    for (let i = 0; i < CifarSettings.workerNum; ++i) {
+    for (let i = 0; i < CifarSettings.nodesMeta.length; ++i) {
       if (i === 0) {
         cursor = averHeight
         workerInitRange.push([0, cursor + paddingHeight])
         workerMaintainRange.push([0, cursor])
-      } else if (i === CifarSettings.workerNum - 1) {
+      } else if (i === CifarSettings.nodesMeta.length - 1) {
         workerInitRange.push([cursor - paddingHeight, height])
         workerMaintainRange.push([cursor, height])
         cursor = height
@@ -110,9 +115,26 @@ export default {
    * Set up Master's listeners.
    */
   _registerMasterListeners: function () {
-    let recConvResultFunc = data => {
+    this.server.setListener('reduce', data => {
+      // let ip = data.sourceIP
+      let layerName = data.layerName
+      // this.reduceCollector[ip] = data.result
+      console.log('receive result from the worker')
+      console.log(data.result)
+    })
+    // perform reduce & update
 
-    }
+    // this.server.setListener("result", data => {
+    //   let range2Update = this.workerInitRange[id]
+    //   Tensor.updateTensor1D(
+    //     this.processingTensor1D,
+    //     this.processingTensorShape,
+    //     range2Update[0],
+    //     range2Update[1],
+    //     data
+    //   )
+      // this.processingTensor1D
+    // })
   },
 
   /**
@@ -214,18 +236,50 @@ export default {
   performMultiInference: function (tensor1D) {
     // preparation
     this._standardlizeImageData(tensor1D)
-    let [workerInitRange, workerMaintainRange] = this._computeWorkerRanges()
+    this.processingTensor1D = tensor1D
+    this.processingTensorShape = [CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3]
+    let tmpRecord = this._computeWorkerRanges()
+    this.workerInitRange = tmpRecord[0]
+    this.workerMaintainRange = tmpRecord[1]
+
+    console.log(this.workerMaintainRange)
+
     let tensorParts = []
-    for (let i = 0; i < workerInitRange.length; ++i) {
+    for (let i = 0; i < this.workerInitRange.length; ++i) {
       tensorParts.push(Tensor.cutterTensor1D(
         tensor1D,
         [CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3],
-        workerInitRange[i][0], workerInitRange[i][1]))
+        this.workerInitRange[i][0], this.workerInitRange[i][1]))
     }
+
     console.log(tensorParts)
 
+    // register listeners
+    this._registerMasterListeners()
+
+    // send tensorParts
+    this.server.createConnection(CifarSettings.wsServerIP)
+      .then(res => {
+        console.log('Info: Connection Formed')
+
+        for (let j = 0; j < CifarSettings.nodesMeta.length; ++j) {
+          this.server.sendMsg({
+            func: 'calConv',
+            data: {
+              targetIP: CifarSettings.nodesMeta[j].ip,
+              layerName: 'conv1',
+              data: tensorParts[j]
+            }
+          })
+          console.log('Info: send tensor')
+        }
+      })
+      .catch(err => {
+        console.log(err)
+      })
+
     // return new Promise((resolve, reject) => {
-    //   WSServer.createConnection(CifarSettings.wsServerIP)
+    //   this.server.createConnection(CifarSettings.serverIP)
     //     .then(res => {
     //       console.log('> Status: Connection Formed')
     //       resolve(res)

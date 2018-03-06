@@ -11,7 +11,6 @@ export default {
     let [ batch_size, height, width, channel ] = shape
     let [ b, h, w, c ] = index
     let position = b * height * width * channel + h * width * channel + w * channel + c
-    console.log('getTensor1DEle test:', position)
     return tensor1D[position]
   },
 
@@ -81,5 +80,29 @@ export default {
         }
     })
     return newArr
+  },
+
+  /**
+   * Construct the N-Dimension Array from a 1-D Array.
+   * @returns {Array} the ND array
+   */
+  structureTensor1D: function (tensor1D, shape) {
+    let tensorND = []
+    for (let b = 0; b < shape[0]; ++b) {
+      let aBatch = []
+      for (let h = 0; h < shape[1]; ++h) {
+        let aRow = []
+        for (let w = 0; w < shape[2]; ++w) {
+          let aCell = []
+          for (let c = 0; c < shape[3]; ++c) {
+            aCell.push(this.getTensor1DEle(tensor1D, shape, [b, h, w, c]))
+          }
+          aRow.push(aCell)
+        }
+        aBatch.push(aRow)
+      }
+      tensorND.push(aBatch)
+    }
+    return tensorND
   }
 }

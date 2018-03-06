@@ -1,26 +1,40 @@
 export default (function () {
-  // let masterIP = '172.20.10.2'
-  let masterIP = 'localhost'  // development
+  let inputTensorShape = [4, 24, 24, 3] // batch_size, height, width, channel
+
   return {
     // HTTP Pre-Settings
-    httpServerIP: `http://${masterIP}:8080`,
+    httpServerIP: `http://192.168.1.110:8080`,
 
     // WebSocket Pre-Settings
-    wsServerIP: `ws://${masterIP}:8888`,
-
-    // Group Workers Pre-Settings
-    workerNum: 3,    // the number of Workers
-    workerCap: [1, 1, 1],  // Worker's Capability
+    wsServerIP: `ws://192.168.1.215:8888`,
 
     // CNN Pre-Settings
-    batchSize: 4,
-    inputShape: [24, 24], // [height * width]
+    batchSize: inputTensorShape[0],
+    inputShape: [inputTensorShape[1], inputTensorShape[2]], // [height * width]
     labels: [
       'airplane', 'automobile', 'bird', 'cat', 'deer',
       'dog', 'frog', 'horse', 'ship', 'truck'
     ],
 
     // CNN Statistics
-    maxFilterSize: 3
+    maxFilterSize: 3,
+
+    // DCNN metadata
+    layersMeta: {
+      conv1: {
+        shape: [inputTensorShape[0], 24, 24, 64]
+      },
+      conv2: {
+        shape: [inputTensorShape[0], 24, 24, 64]
+      }
+    },
+
+    // workers' information
+    nodesMeta: [  // need to config
+      {
+        ip: '192.168.1.112',
+        capacity: 1
+      }
+    ]
   }
 })()

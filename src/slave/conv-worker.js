@@ -9,7 +9,7 @@ import Tensor from '@/kernels/tensor'
 import WSServer from '@/kernels/ws-server'
 
 export default {
-  localIP: null,
+  server: WSServer(),
 
   dataRange: null,
   localTensor4D: null,  // {Array4D} Keep half-done result of the inference
@@ -56,9 +56,11 @@ export default {
    * @returns {Promise}
    */
   registerToMaster: function () {
-    return WSServer.createConnection(CifarSettings.wsServerIP)
+    // set up listeners
+    this.setCifarListeners()
+
+    return this.server.createConnection(CifarSettings.wsServerIP)
       .then(res => {
-        // set up listeners
         return Promise.resolve(res)
       })
       .catch(err => {
@@ -70,34 +72,18 @@ export default {
    * Set Cifar 10 Listeners.
    */
   setCifarListeners: function () {
-
+    this.server.setListener('calConv', data => {
+      console.log('hit listener: calConv')
+      this.server.sendMsg({
+        func: 'reduce',
+        data: {
+          // sourceIP: this.localIP,
+          result: [1, 2, 3, 4 ,5],
+          layerName: 'conv1'
+        }
+      })
+    })
   },
-
-  // /**
-  //  * Register to the Master
-  //  * @returns {Promise}
-  //  */
-  // startWorkForMaster: function () {
-  //   WSServer.createConnection(CifarSettings.wsServerIP)
-  //     .then(res => {
-  //       // exec conv layer 1
-  //       console.log('> Status: Connection Formed')
-  //       let recData = JSON.parse(res)
-  //       if (recData.op === 'init') {
-  //         this.dataRange = recData.range
-  //         return this.execConvLayer1(recData.shape, recData.tensor1D, recData.overlapSize)
-  //       } else {
-  //         return Promise.reject(err)
-  //       }
-  //     })
-  //     .then(res => {
-  //       // exec conv layer 2
-  //     })
-  //     .catch(err => {
-  //       console.log(err)
-  //       reject(err)
-  //     })
-  // },
 
   execConvLayer1 (shape, tensor1D, overlap) {
     this.localTensor4D = Array4D.new(shape, tensor1D)
@@ -117,15 +103,5 @@ export default {
       result1Dtensor = Tensor.cutterTensor1D(result1Dtensor, shape, shape[1] + overlap, shape[1] - overlap)
       newRange = [this.dataRange[0] + overlap, this.dataRange[1] - overlap]
     }
-
-    // reduce to the server
-    WSServer.send({
-      op: 'slave-reduce',
-      data: {
-        from: this.localIP,
-        tensor1D: result1Dtensor,
-        range: newRange
-      }
-    })
   }
 }

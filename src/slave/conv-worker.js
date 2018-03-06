@@ -77,7 +77,7 @@ export default {
       this.server.sendMsg({
         func: 'reduce',
         data: {
-          // sourceIP: this.localIP,
+          sourceIP: this.server.localIP,
           result: [1, 2, 3, 4 ,5],
           layerName: 'conv1'
         }

@@ -116,9 +116,9 @@ export default {
    */
   _registerMasterListeners: function () {
     this.server.setListener('reduce', data => {
-      // let ip = data.sourceIP
+      let ip = data.sourceIP
       let layerName = data.layerName
-      // this.reduceCollector[ip] = data.result
+      this.reduceCollector[ip] = data.result
       console.log('receive result from the worker')
       console.log(data.result)
     })

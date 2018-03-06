@@ -6,6 +6,7 @@ export default (function () {
   return {
     // Maintain a WebSocket Instance
     ws: null,
+    localIP: null,
 
     // registered listeners; format: { funcName: func }
     // functions require exactally one argument, data, extracted from transmitted JSON object
@@ -18,6 +19,10 @@ export default (function () {
     _presetListeners: function () {
       this.listenerList['onReceive'] = (data) => {
         console.log(data)
+      }
+      this.listenerList['setIP'] = (data) => {
+        console.log('My IP is ' + data)
+        this.localIP = data
       }
     },
 

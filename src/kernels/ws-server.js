@@ -21,8 +21,8 @@ export default (function () {
         console.log(data)
       }
       this.listenerList['setIP'] = (data) => {
-        console.log('My IP is ' + data)
         this.localIP = data
+        console.log('My IP is ' + this.localIP)
       }
     },
 

@@ -4,17 +4,11 @@
       class="dcnn-button-large"
       type="default"
       size="large"
-      @click="onClickLoadImage"
+      v-for="(item, index) in ['load image', 'multi infer']"
+      :key="index"
+      @click="onClick(item)"
     >
-      load image
-    </md-button>
-    <md-button
-      class="dcnn-button-large"
-      type="default"
-      size="large"
-      @click="onClickMultiInfer"
-    >
-      multi infer
+      {{ item }}
     </md-button>
     <md-content class="dcnn-message-area">{{ result }}</md-content>
   </div>
@@ -33,15 +27,22 @@ export default {
     }
   },
   methods: {
-    onClickLoadImage () {
-      this.$http.get('/static/cifar-10/test-imgs-data/data.json')
-        .then(res => {
-          this.tensor1D = res.data
-          this.$toasted.show('Success: load image')
-        })
-        .catch(err => {
-          console.log(err)
-        })
+    onClick (type) {
+      switch (type) {
+        case 'load image':
+          this.$http.get('/static/cifar-10/test-imgs-data/data.json')
+          .then(res => {
+            this.tensor1D = res.data
+            this.$toasted.show('Success: load image')
+          })
+          .catch(err => {
+            console.log(err)
+          })
+          break
+        case 'multi infer':
+          this.onClickMultiInfer()
+          break
+      }
     },
     onClickMultiInfer () {
       if (this.tensor1D === null) {

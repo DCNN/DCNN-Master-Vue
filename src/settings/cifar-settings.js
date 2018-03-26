@@ -3,10 +3,10 @@ export default (function () {
 
   return {
     // HTTP Pre-Settings
-    httpServerIP: `http://192.168.1.110:8080`,
+    httpServerIP: 'http://192.168.199.121:8080',
 
     // WebSocket Pre-Settings
-    wsServerIP: `ws://192.168.1.215:8888`,
+    wsServerIP: 'ws://192.168.199.212:8888',
 
     // CNN Pre-Settings
     batchSize: inputTensorShape[0],
@@ -32,7 +32,7 @@ export default (function () {
     // workers' information
     nodesMeta: [  // need to config
       {
-        ip: '192.168.1.112',
+        ip: '192.168.199.112',
         capacity: 1
       }
     ]

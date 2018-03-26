@@ -237,7 +237,12 @@ export default {
     // preparation
     this._standardlizeImageData(tensor1D)
     this.processingTensor1D = tensor1D
-    this.processingTensorShape = [CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3]
+    this.processingTensorShape = [
+      CifarSettings.batchSize,
+      CifarSettings.inputShape[0],
+      CifarSettings.inputShape[1],
+      3
+    ]
     let tmpRecord = this._computeWorkerRanges()
     this.workerInitRange = tmpRecord[0]
     this.workerMaintainRange = tmpRecord[1]
@@ -248,7 +253,12 @@ export default {
     for (let i = 0; i < this.workerInitRange.length; ++i) {
       tensorParts.push(Tensor.cutterTensor1D(
         tensor1D,
-        [CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3],
+        [
+          CifarSettings.batchSize,
+          CifarSettings.inputShape[0],
+          CifarSettings.inputShape[1],
+          3
+        ],
         this.workerInitRange[i][0], this.workerInitRange[i][1]))
     }
 

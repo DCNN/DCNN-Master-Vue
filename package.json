@@ -11,6 +11,8 @@
     "build": "node build/build.js"
   },
   "dependencies": {
+    "ajv": "^6.4.0",
+    "ajv-keywords": "^3.1.0",
     "axios": "^0.17.1",
     "deeplearn": "^0.3.15",
     "vue": "^2.5.2",

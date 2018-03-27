@@ -36,6 +36,7 @@ export default {
   name: 'master',
   data () {
     return {
+      engine: null,
       result: null,
       tensor1D: null  // image data [batch_size * height * width * channel]
     }
@@ -64,9 +65,9 @@ export default {
         this.$toasted.show('Error: Please load images first')
         return
       }
-      Cifar10.loadModel()
+      this.engine.loadModel()
         .then(res => {
-          return Cifar10.performInference(this.tensor1D)
+          return this.engine.performInference(this.tensor1D)
         })
         .then(res => {
           this.result = res
@@ -95,7 +96,9 @@ export default {
       console.log(Tensor.structureTensor1D(test1DTensor, [2, 2, 4, 3]))
     }
   },
-  created () {}
+  created () {
+    this.engine = new Cifar10()
+  }
 }
 </script>
 

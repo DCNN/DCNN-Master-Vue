@@ -8,30 +8,32 @@ import CifarSettings from '@/settings/cifar-settings'
 import Tensor from '@/kernels/tensor'
 import WSServer from '@/kernels/ws-server'
 
-export default {
-  server: WSServer(),
+class ConvWorker {
+  constructor () {
+    this.server = new WSServer()
 
-  dataRange: null,
-  localTensor4D: null,  // {Array4D} Keep half-done result of the inference
+    this.dataRange = null
+    this.localTensor4D = null  // {Array4D} Keep half-done result of the inference
 
-  // Model Descriptions {NDArray}
-  conv1Biases: null,
-  conv1Weights: null,
-  conv2Biases: null,
-  conv2Weights: null,
+    // Model Descriptions {NDArray}
+    this.conv1Biases = null
+    this.conv1Weights = null
+    this.conv2Biases = null
+    this.conv2Weights = null
 
-  // Mark if the model has been loaded
-  isModelLoaded: false,
+    // Mark if the model has been loaded
+    this.isModelLoaded = false
 
-  // NDArrayMathGPU
-  math: ENV.math,
+    // NDArrayMathGPU
+    this.math = ENV.math
+  }
 
   /**
    * Load the model from NetFiles.
    * @returns {Promise}
    */
   loadModel () {
-    const varLoader = new CheckpointLoader(`${CifarSettings.httpServerIP}/static/cifar-10/14646/`)
+    const varLoader = new CheckpointLoader(`${CifarSettings.HTTP_SERVER_IP}/static/cifar-10/14646/`)
     return new Promise((resolve, reject) => {
       varLoader.getAllVariables()
         .then(vars => {
@@ -49,29 +51,29 @@ export default {
           reject(err)
         })
     })
-  },
+  }
 
   /**
    * Register to the master.
    * @returns {Promise}
    */
-  registerToMaster: function () {
+  registerToMaster () {
     // set up listeners
     this.setCifarListeners()
 
-    return this.server.createConnection(CifarSettings.wsServerIP)
+    return this.server.createConnection(CifarSettings.WS_SERVER_IP)
       .then(res => {
         return Promise.resolve(res)
       })
       .catch(err => {
         return Promise.reject(err)
       })
-  },
+  }
 
   /**
    * Set Cifar 10 Listeners.
    */
-  setCifarListeners: function () {
+  setCifarListeners () {
     this.server.setListener('calConv', data => {
       console.log('hit listener: calConv')
       this.server.sendMsg({
@@ -83,7 +85,7 @@ export default {
         }
       })
     })
-  },
+  }
 
   execConvLayer1 (shape, tensor1D, overlap) {
     this.localTensor4D = Array4D.new(shape, tensor1D)
@@ -105,3 +107,5 @@ export default {
     }
   }
 }
+
+export default ConvWorker

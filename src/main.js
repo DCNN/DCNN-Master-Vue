@@ -33,7 +33,7 @@ Vue.use(Toasted, {
 Vue.use(VueAxios, axios)
 
 // axios settings
-Vue.axios.defaults.baseURL = CifarSettings.httpServerIP
+Vue.axios.defaults.baseURL = CifarSettings.HTTP_SERVER_IP
 
 // deeplearnjs config
 let math = new NDArrayMath('webgl', false)

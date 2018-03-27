@@ -14,33 +14,35 @@ import WSServer from '@/kernels/ws-server'
 import CifarSettings from '@/settings/cifar-settings'
 import Tensor from '@/kernels/tensor'
 
-export default {
-  server: WSServer(),
-  // Model Descriptions {NDArray}
-  conv1Biases: null,     // 64
-  conv1Weights: null,    // 5 5 3 64
-  conv2Biases: null,     // 64
-  conv2Weights: null,    // 5 5 3 64
-  local3Biases: null,    // 384
-  local3Weights: null,   // 2304 384
-  local4Biases: null,    // 192
-  local4Weights: null,   // 384 192
-  softmaxBiases: null,   // 10
-  softmaxWeights: null,  // 192 10
+class Cifar10 {
+  constructor () {
+    this.server = new WSServer()
 
-  // Mark if the model has been loaded
-  isModelLoaded: false,
+    // Model Descriptions {NDArray}
+    this.conv1Biases = null     // 64
+    this.conv1Weights = null    // 5 5 3 64
+    this.conv2Biases = null     // 64
+    this.conv2Weights = null    // 5 5 3 64
+    this.local3Biases = null    // 384
+    this.local3Weights = null   // 2304 384
+    this.local4Biases = null    // 192
+    this.local4Weights = null   // 384 192
+    this.softmaxBiases = null   // 10
+    this.softmaxWeights = null  // 192 10
 
-  // NDArrayMathGPU
-  math: ENV.math,
+    // Mark if the model has been loaded
+    this.isModelLoaded = false
 
-  // DCNN only.
-  processingTensor1D: [],  // processing tensor
-  reduceCollector: {},
-  processingTensorShape: null,
-  processingStage: null,     // 'Wait4Conv1', 'Wait4Conv2'
-  workerInitRange: null,
-  workerMaintainRange: null,
+    // NDArrayMathGPU
+    this.math = ENV.math
+
+    // Multi-Inference only
+    this.processingTensor1D = []  // processing tensor
+    this.reduceCollector = {}
+    this.processingStage = null     // 'Wait4Conv1', 'Wait4Conv2'
+    this.workerInitRange = null
+    this.workerMaintainRange = null
+  }
 
   /**
    * Pre-Processes Image Data on 1D tensor.
@@ -48,9 +50,9 @@ export default {
    * @param {Array} resultTensor1D [batch_size * height * width * channel]
    * @returns {Array} [batch_size]
    */
-  _translateResult: function (resultTensor1D) {
+  _translateResult (resultTensor1D) {
     let resultList = []
-    let labelNum = CifarSettings.labels.length
+    let labelNum = CifarSettings.LABELS.length
     for (let i = 0; i < resultTensor1D.length; i += labelNum) {
       let maxIndex = 0
       for (let j = 0; j < labelNum; ++j) {
@@ -58,10 +60,10 @@ export default {
           maxIndex = j
         }
       }
-      resultList.push(CifarSettings.labels[maxIndex])
+      resultList.push(CifarSettings.LABELS[maxIndex])
     }
     return resultList
-  },
+  }
 
   /**
    * Pre-Processes Image Data on 1D tensor.
@@ -69,8 +71,8 @@ export default {
    * @param {Array} tensor1D
    * @returns {null}
    */
-  _standardlizeImageData: function (tensor1D) {
-    let batchLength = CifarSettings.inputShape[0] * CifarSettings.inputShape[1]
+  _standardlizeImageData (tensor1D) {
+    let batchLength = CifarSettings.IMAGE_HEIGHT * CifarSettings.IMAGE_WIDTH
     for (let i = 0; i < tensor1D.length; i += batchLength) {
       let mean = MathExtra.meanFromTo(tensor1D, i, i + batchLength)
       let stddev = MathExtra.stddevFromTo(tensor1D, i, i + batchLength)
@@ -78,26 +80,26 @@ export default {
         tensor1D[j] = (tensor1D[j] - mean) / stddev
       }
     }
-  },
+  }
 
   /**
    * DCNN only.
    * Compute the height range of each worker.
    * @returns {Array} ['the_range_workers_received', 'the_range_workers_responsible']
    */
-  _computeWorkerRanges: function () {
-    let height = CifarSettings.inputShape[0]
-    let averHeight = Math.floor(height / CifarSettings.nodesMeta.length)
-    let paddingHeight = Math.floor(CifarSettings.maxFilterSize / 2)
+  _computeWorkerRanges () {
+    let height = CifarSettings.IMAGE_HEIGHT
+    let averHeight = Math.floor(height / CifarSettings.WORKER_META.length)
+    let paddingHeight = Math.floor(CifarSettings.MAX_FILTER_SIZE / 2)
     let workerInitRange =  []
     let workerMaintainRange = []
     let cursor = 0
-    for (let i = 0; i < CifarSettings.nodesMeta.length; ++i) {
+    for (let i = 0; i < CifarSettings.WORKER_META.length; ++i) {
       if (i === 0) {
         cursor = averHeight
         workerInitRange.push([0, cursor + paddingHeight])
         workerMaintainRange.push([0, cursor])
-      } else if (i === CifarSettings.nodesMeta.length - 1) {
+      } else if (i === CifarSettings.WORKER_META.length - 1) {
         workerInitRange.push([cursor - paddingHeight, height])
         workerMaintainRange.push([cursor, height])
         cursor = height
@@ -108,13 +110,13 @@ export default {
       }
     }
     return [workerInitRange, workerMaintainRange]
-  },
+  }
 
   /**
    * DCNN only.
    * Set up Master's listeners.
    */
-  _registerMasterListeners: function () {
+  _registerMasterListeners () {
     this.server.setListener('reduce', data => {
       let ip = data.sourceIP
       let layerName = data.layerName
@@ -128,14 +130,14 @@ export default {
     //   let range2Update = this.workerInitRange[id]
     //   Tensor.updateTensor1D(
     //     this.processingTensor1D,
-    //     this.processingTensorShape,
+    //     CifarSettrings.INPUT_TENSOR,
     //     range2Update[0],
     //     range2Update[1],
     //     data
     //   )
       // this.processingTensor1D
     // })
-  },
+  }
 
   /**
    * Load Model from NetFiles
@@ -173,14 +175,14 @@ export default {
           reject(err)
         })
     })
-  },
+  }
 
   /**
    * Performs the local inference of cifar-10 network, with only 1 device.
    * @param {Array} tensor1D: 1D tensor [batch_szie * height * width * channel]
    * @returns {Promise}
    */
-  performInference: function (tensor1D) {
+  performInference (tensor1D) {
     if (!this.isModelLoaded) {
       return Promise.reject('Error: Model Not Loaded')
     }
@@ -188,7 +190,7 @@ export default {
     return new Promise((resolve, reject) => {
       try {
         this._standardlizeImageData(tensor1D)
-        let tensor4D = Array4D.new([CifarSettings.batchSize, CifarSettings.inputShape[0], CifarSettings.inputShape[1], 3], tensor1D)
+        let tensor4D = Array4D.new(CifarSettings.INPUT_TENSOR, tensor1D)
 
         // Conv: layer 1
         let conv1 = this.math.conv2d(tensor4D, this.conv1Weights, this.conv1Biases, [1, 1], 'same')
@@ -202,7 +204,7 @@ export default {
 
         // flatten tensor, ready to perform matrix multiplication
         let [curB, curH, curW, curC] = pool2.shape
-        pool2 = pool2.reshape([CifarSettings.batchSize, curH * curW * curC])
+        pool2 = pool2.reshape([CifarSettings.BATCH_SIZE, curH * curW * curC])
 
         // Local: layer 3
         let local3 = this.math.matMul(pool2, this.local3Weights)
@@ -225,7 +227,7 @@ export default {
         reject(err)
       }
     })
-  },
+  }
 
   /**
    * DCNN only.
@@ -233,16 +235,10 @@ export default {
    * @param {Array} tensor1D: 1D tensor [batch_szie * height * width * channel]
    * @returns {Promise}
    */
-  performMultiInference: function (tensor1D) {
+  performMultiInference (tensor1D) {
     // preparation
     this._standardlizeImageData(tensor1D)
     this.processingTensor1D = tensor1D
-    this.processingTensorShape = [
-      CifarSettings.batchSize,
-      CifarSettings.inputShape[0],
-      CifarSettings.inputShape[1],
-      3
-    ]
     let tmpRecord = this._computeWorkerRanges()
     this.workerInitRange = tmpRecord[0]
     this.workerMaintainRange = tmpRecord[1]
@@ -253,12 +249,7 @@ export default {
     for (let i = 0; i < this.workerInitRange.length; ++i) {
       tensorParts.push(Tensor.cutterTensor1D(
         tensor1D,
-        [
-          CifarSettings.batchSize,
-          CifarSettings.inputShape[0],
-          CifarSettings.inputShape[1],
-          3
-        ],
+        CifarSettrings.INPUT_TENSOR,
         this.workerInitRange[i][0], this.workerInitRange[i][1]))
     }
 
@@ -268,15 +259,14 @@ export default {
     this._registerMasterListeners()
 
     // send tensorParts
-    this.server.createConnection(CifarSettings.wsServerIP)
+    this.server.createConnection(CifarSettings.WS_SERVER_IP)
       .then(res => {
         console.log('Info: Connection Formed')
-
-        for (let j = 0; j < CifarSettings.nodesMeta.length; ++j) {
+        for (let j = 0; j < CifarSettings.WORKER_META.length; ++j) {
           this.server.sendMsg({
             func: 'calConv',
             data: {
-              targetIP: CifarSettings.nodesMeta[j].ip,
+              targetIP: CifarSettings.WORKER_META[j].ip,
               layerName: 'conv1',
               data: tensorParts[j]
             }
@@ -301,3 +291,5 @@ export default {
     // })
   }
 }
+
+export default Cifar10

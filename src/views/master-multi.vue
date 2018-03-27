@@ -22,6 +22,7 @@ export default {
   name: 'multi-master',
   data () {
     return {
+      engine: null,
       result: null,
       tensor1D: null  // image data [ batch_size * height * width * channel ]
     }
@@ -50,16 +51,11 @@ export default {
         return
       }
 
-      Cifar10.performMultiInference(this.tensor1D)
-      // There is no need to load model here.
-      // Cifar10.performMultiInference(this.tensor1D)
-      //   .then(res => {
-      //     console.log(res)
-      //   })
-      //   .catch(err => {
-      //     console.log(err)
-      //   })
+      this.engine.performMultiInference(this.tensor1D)
     }
+  },
+  created () {
+    this.engine = new Cifar10()
   }
 }
 </script>

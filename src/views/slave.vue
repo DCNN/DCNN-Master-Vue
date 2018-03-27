@@ -27,12 +27,13 @@ export default {
   name: 'slave',
   data () {
     return {
+      worker: null,
       msg: 'This is a Slave Node.'
     }
   },
   methods: {
     onClickLoadModel () {
-      ConvWorker.loadModel()
+      this.worker.loadModel()
         .then(res => {
           this.msg = 'Model Loaded...'
         })
@@ -42,7 +43,7 @@ export default {
         })
     },
     onClickRegister () {
-      ConvWorker.registerToMaster()
+      this.worker.registerToMaster()
         .then(res => {
           this.$toasted.show('Info: Registered')
         })
@@ -53,7 +54,7 @@ export default {
     }
   },
   created () {
-
+    this.worker = new ConvWorker()
   }
 }
 </script>

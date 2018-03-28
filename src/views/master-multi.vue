@@ -31,14 +31,7 @@ export default {
     onClick (type) {
       switch (type) {
         case 'load image':
-          this.$http.get('/static/cifar-10/test-imgs-data/data.json')
-          .then(res => {
-            this.tensor1D = res.data
-            this.$toasted.show('Success: load image')
-          })
-          .catch(err => {
-            console.log(err)
-          })
+          this.loadImage()
           break
         case 'multi infer':
           this.onClickMultiInfer()
@@ -50,8 +43,16 @@ export default {
         this.$toasted.show('Error: Please load images first')
         return
       }
-
       this.engine.performMultiInference(this.tensor1D)
+    },
+    async loadImage () {
+      try {
+        let res = await this.$http.get('/static/cifar-10/test-imgs-data/data.json')
+        this.tensor1D = res.data
+        this.$toasted.show('Success: load image')
+      } catch (error) {
+        console.log(error)
+      }
     }
   },
   created () {

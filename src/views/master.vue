@@ -107,4 +107,3 @@ export default {
   margin-top: 2vh;
 }
 </style>
-

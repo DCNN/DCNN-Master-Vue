@@ -239,9 +239,11 @@ class Cifar10 {
     // preparation
     this._standardlizeImageData(tensor1D)
     this.processingTensor1D = tensor1D
-    let tmpRecord = this._computeWorkerRanges()
-    this.workerInitRange = tmpRecord[0]
-    this.workerMaintainRange = tmpRecord[1]
+
+    [this.workerInitRange, this.workerMaintainRange] = this._computeWorkerRanges()
+    // let tmpRecord = this._computeWorkerRanges()
+    // this.workerInitRange = tmpRecord[0]
+    // this.workerMaintainRange = tmpRecord[1]
 
     console.log(this.workerMaintainRange)
 

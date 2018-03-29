@@ -32,42 +32,34 @@ class ConvWorker {
    * Load the model from NetFiles.
    * @returns {Promise}
    */
-  loadModel () {
+  async loadModel () {
     const varLoader = new CheckpointLoader(`${CifarSettings.HTTP_SERVER_IP}/static/cifar-10/14646/`)
-    return new Promise((resolve, reject) => {
-      varLoader.getAllVariables()
-        .then(vars => {
-          // Conv 1
-          this.conv1Biases = vars['conv1/biases']      // 64
-          this.conv1Weights = vars['conv1/weights']    // 5 5 3 64
+    let vars = await varLoader.getAllVariables()
 
-          // Conv 2
-          this.conv2Biases = vars['conv2/biases']      // 64
-          this.conv2Weights = vars['conv2/weights']    // 5 5 64 64
+    // Conv 1
+    this.conv1Biases = vars['conv1/biases']      // 64
+    this.conv1Weights = vars['conv1/weights']    // 5 5 3 64
 
-          resolve()
-        })
-        .catch(err => {
-          reject(err)
-        })
-    })
+    // Conv 2
+    this.conv2Biases = vars['conv2/biases']      // 64
+    this.conv2Weights = vars['conv2/weights']    // 5 5 64 64
+
+    return Promise.resolve()
   }
 
   /**
    * Register to the master.
    * @returns {Promise}
    */
-  registerToMaster () {
+  async registerToMaster () {
     // set up listeners
     this.setCifarListeners()
-
-    return this.server.createConnection(CifarSettings.WS_SERVER_IP)
-      .then(res => {
-        return Promise.resolve(res)
-      })
-      .catch(err => {
-        return Promise.reject(err)
-      })
+    try {
+      let res = await this.server.createConnection(CifarSettings.WS_SERVER_IP)
+      return Promise.resolve(res)
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   /**

@@ -39,12 +39,25 @@ class WSServer {
     }
   }
 
+  _refreshListeners () {
+    this.ws.onmessage = (event) => {
+      let recData = JSON.parse(event.data)
+      console.log('receive data:')
+      console.log(recData)
+      if (recData.func !== null && this.listenerList[recData.func] !== null) {
+        console.log(this.listenerList)
+        this.listenerList[recData.func](recData.data)
+      }
+    }
+  }
+
   /**
    * Initalize the connection between client & the WS server.
    * @param {string} destIP ws://xxx.xxx.xxx.xxx:xxxx
    * @returns {Promise}
    */
   createConnection (destIP) {
+    this._presetListeners()
     return new Promise((resolve, reject) => {
       // create a websocket instance
       this.ws = new WebSocket(destIP)
@@ -54,16 +67,7 @@ class WSServer {
       this.ws.onerror = (event) => {
         reject(event)
       }
-      this.ws.onmessage = (event) => {
-        let recData = JSON.parse(event.data)
-        console.log('receive data')
-        console.log(recData)
-        if (recData.func !== null && this.listenerList[recData.func] !== null) {
-          console.log(this.listenerList)
-          this.listenerList[recData.func](recData.data)
-        }
-      }
-      this._presetListeners()
+      this._refreshListeners()
     })
   }
 
@@ -74,7 +78,7 @@ class WSServer {
    */
   sendMsg (jsonMsg) {
     if (this.ws === null || this.ws.readyState != WebSocket.OPEN) {
-      console.log('Err: Send msg failed')
+      console.error('Send msg failed')
       return
     }
 
@@ -90,6 +94,7 @@ class WSServer {
    */
   setListener (listenerName, listener) {
     this.listenerList[listenerName] = listener
+    this._refreshListeners()
     return true
   }
 
@@ -101,6 +106,7 @@ class WSServer {
   removeListener (listenerName) {
     if (this.listenerList[listenerName] !== null) {
       this.listenerList[listenerName] = null
+      this._refreshListeners()
     }
   }
 

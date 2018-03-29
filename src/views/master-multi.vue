@@ -29,30 +29,26 @@ export default {
   },
   methods: {
     onClick (type) {
-      switch (type) {
-        case 'load image':
-          this.loadImage()
-          break
-        case 'multi infer':
-          this.onClickMultiInfer()
-          break
+      let that = this
+      let switchObj = {
+        'load image': async function () {
+          try {
+            let res = await that.$http.get('/static/cifar-10/test-imgs-data/data.json')
+            that.tensor1D = res.data
+            that.$toasted.show('Success: load image')
+          } catch (error) {
+            console.log(error)
+          }
+        },
+        'multi infer': function () {
+          if (that.tensor1D === null) {
+            that.$toasted.show('Error: Please load images first')
+            return
+          }
+          that.engine.performMultiInference(that.tensor1D)
+        }
       }
-    },
-    onClickMultiInfer () {
-      if (this.tensor1D === null) {
-        this.$toasted.show('Error: Please load images first')
-        return
-      }
-      this.engine.performMultiInference(this.tensor1D)
-    },
-    async loadImage () {
-      try {
-        let res = await this.$http.get('/static/cifar-10/test-imgs-data/data.json')
-        this.tensor1D = res.data
-        this.$toasted.show('Success: load image')
-      } catch (error) {
-        console.log(error)
-      }
+      switchObj[type]()
     }
   },
   created () {
